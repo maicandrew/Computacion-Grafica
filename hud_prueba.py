@@ -11,7 +11,7 @@ nivel = 1
 tam = dict()
 tam = {
 "bloque" : [75,90],
-"gato" : [120,44],
+"gato" : [150,55],
 "generador" : [20,20],
 "balas" : [20,20],
 "enemigos" : [120, 44]
@@ -192,6 +192,24 @@ class Generador (pygame.sprite.Sprite):
         self.rect.x = pos[0]
         self.rect.y = pos[1]
 
+class GeneradorEnemigo (pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface([20,20])
+        self.rect = self.image.get_rect()
+        self.cd = 0
+        self.con = 0
+        self.ene = None
+
+    def update(self):
+        if self.con <= self.cd*tics:
+            self.con += 1
+        else:
+            self.ene = Enemigo([915,80], 1)
+            self.con = 0
+            self.cd = 20
+
+
 if __name__ == '__main__':
     #Definicion de variables
     pygame.init()
@@ -205,9 +223,8 @@ if __name__ == '__main__':
     disparos = pygame.sprite.Group()
     mapita = mapa(map)
     todos.add(mapita)
-    ene = Enemigo([915,80], 1)
-    todos.add(ene)
-    enemigos.add(ene)
+    ge = GeneradorEnemigo()
+    todos.add(ge)
 
     g1 = Generador(ROJO, [20,50])
     hud.add(g1)
@@ -290,6 +307,10 @@ if __name__ == '__main__':
             if t.dead:
                 todos.remove(t)
                 torres.remove(t)
+        if ge.ene != None:
+            enemigos.add(ge.ene)
+            todos.add(ge.ene)
+            ge.ene = None
 
         for d in disparos:
             if d.rect.x >= ancho:
