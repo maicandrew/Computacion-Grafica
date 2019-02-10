@@ -16,6 +16,7 @@ tam = {
 "generador" : [20,20],
 "balas" : [40,36],
 "enemigos" : [75, 55],
+"moneda" : [25, 25]
 }
 mapas = dict()
 legal = [240,80, 915,530]
@@ -23,6 +24,15 @@ map = pygame.image.load("Mapa1.1.png")
 tam["mapa"] = [int(map.get_width()*fact), int(map.get_height()*fact)]
 map = pygame.transform.scale(map,tam["mapa"])
 mapas[1] = map
+moneda = pygame.image.load("Juego/Mapa y gatos/Moneda.png")
+moneda = pygame.transform.scale(moneda, [tam["moneda"][0]*9, tam["moneda"][1]])
+costos = dict()
+costos = {
+1 : 5,
+2 : 10,
+3 : 20,
+4 : 30,
+}
 balas = set_balas(tam["balas"])
 gatos = set_gatos(tam["gato"])
 perros = set_perros(tam["enemigos"])
@@ -47,15 +57,56 @@ class mapa(pygame.sprite.Sprite):
             self.con = 0
         self.image = pygame.Surface.subsurface(mapas[nivel], (ancho*self.frame, 0, ancho, alto))
 
+class Coin(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self)
+        a = tam["moneda"]
+        self.image = pygame.Surface.subsurface(moneda, (0,0,a[0], a[1]))
+        self.rect = self.image.get_rect()
+        self.con = 0
+        self.frames = 9
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
+    def update(self):
+        if self.con < self.frames-1:
+            self.con += 1
+        else:
+            self.con = 0
+        a = tam["moneda"]
+        self.image = pygame.Surface.subsurface(moneda, (self.con*a[0], 0, a[0], a[1]))
+
+class Disparo(pygame.sprite.Sprite):
+    def __init__(self, pos, type):
+        pygame.sprite.Sprite.__init__(self)
+        a = tam["balas"]
+        self.image = pygame.Surface.subsurface(balas[type], (0, 0, a[0], a[1]))
+        self.rect = self.image.get_rect()
+        self.damage = 25
+        self.type = type
+        self.con = 0
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+        self.vel = 120+((type-1)*40)
+
+    def update(self):
+        self.rect.x += self.vel/tics
+        if self.con <= 2:
+            self.con += 1
+        else:
+            self.con = 0
+        a = tam["balas"]
+        self.image = pygame.Surface.subsurface(balas[self.type], (a[0]*self.con, 0, a[0], a[1]))
+
 class Torre (pygame.sprite.Sprite):
     def __init__(self, type, pos):
         pygame.sprite.Sprite.__init__(self)
         a = tam["gato"]
         self.image = pygame.Surface.subsurface(gatos[type], (0,0,a[0]/2,a[1]))
-        self.rect = self.image.get_rect()
         self.type = type
         self.frame = 0
         self.con = 0
+        self.rect = self.image.get_rect()
         self.vel = 0.5
         self.block = None
         self.atk = 0
@@ -66,12 +117,26 @@ class Torre (pygame.sprite.Sprite):
         self.dead = False
         self.unlocked = True
         self.dis = None
+        self.coin = None
 
     def update(self):
         if self.click and self.unlocked:
             self.rect.center = pygame.mouse.get_pos()
         else:
-            if self.type == 4 or self.type == 3:
+            if self.type == 1:
+                if self.atk < tics/self.vel:
+                    self.atk += 1
+                else:
+                    self.coin = Coin([self.rect.right,self.rect.y])
+                    self.atk = 0
+                if self.con < 10:
+                    self.con += 1
+                else:
+                    self.frame = (self.frame + 1) % 2
+                    self.con = 0
+                if self.health <= 0:
+                    self.dead = True
+            elif self.type == 4 or self.type == 3:
                 if self.atk < tics/self.vel:
                     self.atk += 1
                 else:
@@ -92,7 +157,6 @@ class Torre (pygame.sprite.Sprite):
                     self.con = 0
                 if self.health <= 0:
                     self.dead = True
-
         a =tam["gato"]
         self.image = pygame.Surface.subsurface(gatos[self.type], (a[0]/2*self.frame, 0, a[0]/2, a[1]))
 
@@ -164,28 +228,6 @@ class Enemigo(pygame.sprite.Sprite):
         else: en_y = self.action - 1
         self.image = pygame.Surface.subsurface(perros[self.type], (a[0]*self.con, en_y*a[1], a[0], a[1]))
 
-class Disparo(pygame.sprite.Sprite):
-    def __init__(self, pos, type):
-        pygame.sprite.Sprite.__init__(self)
-        a = tam["balas"]
-        self.image = pygame.Surface.subsurface(balas[type], (0, 0, a[0], a[1]))
-        self.rect = self.image.get_rect()
-        self.damage = 25
-        self.type = type
-        self.con = 0
-        self.rect.x = pos[0]
-        self.rect.y = pos[1]
-        self.vel = 120+((type-1)*40)
-
-    def update(self):
-        self.rect.x += self.vel/tics
-        if self.con <= 2:
-            self.con += 1
-        else:
-            self.con = 0
-        a = tam["balas"]
-        self.image = pygame.Surface.subsurface(balas[self.type], (a[0]*self.con, 0, a[0], a[1]))
-
 def colocar(pos):
     if legal[0] <= pos[0] <= legal[2] and legal[1] <= pos[1] <= legal[3]:
         return True
@@ -205,10 +247,10 @@ class Bloque(pygame.sprite.Sprite):
         self.oc = False
 
 class Generador (pygame.sprite.Sprite):
-    def __init__(self, color, pos, type):
+    def __init__(self, pos, type):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface(tam["generador"])
-        self.image.fill(color)
+        a = tam["gato"]
+        self.image = pygame.Surface.subsurface(gatos[type], (0, 0,a[0]/2, a[1]))
         self.rect=self.image.get_rect()
         self.type = type
         self.rect.x = pos[0]
@@ -234,7 +276,6 @@ class GeneradorEnemigo (pygame.sprite.Sprite):
             self.cd = 10
             self.cant += 1
 
-
 if __name__ == '__main__':
     #Definicion de variables
     pygame.init()
@@ -246,18 +287,19 @@ if __name__ == '__main__':
     enemigos = pygame.sprite.Group()
     hud = pygame.sprite.Group()
     disparos = pygame.sprite.Group()
+    coins = pygame.sprite.Group()
     mapita = mapa(map)
-    todos.add(mapita)
     ge = GeneradorEnemigo()
+    todos.add(mapita)
     todos.add(ge)
 
-    g1 = Generador(ROJO, [20,50], 1)
+    g1 = Generador([20,50], 1)
+    g2 = Generador([20,200], 2)
+    g3 = Generador([20,350], 3)
     hud.add(g1)
     todos.add(g1)
-    g2 = Generador(VERDE, [20,100], 2)
     hud.add(g2)
     todos.add(g2)
-    g3 = Generador(BLANCO, [20,150], 3)
     hud.add(g3)
     todos.add(g3)
 
@@ -275,6 +317,7 @@ if __name__ == '__main__':
     lose = False
     win = False
     exit = False
+    total_coins = 100
     while not fin:
         #Gestion de eventos
         while not (lose or win or exit or fin):
@@ -284,11 +327,12 @@ if __name__ == '__main__':
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for g in hud:
                         if g.rect.collidepoint(event.pos):
-                            mp = event.pos
-                            m8 = Torre(g.type, event.pos)
-                            last = m8
-                            torres.add(m8)
-                            todos.add(m8)
+                            if total_coins >= costos[g.type]:
+                                mp = event.pos
+                                m8 = Torre(g.type, event.pos)
+                                last = m8
+                                torres.add(m8)
+                                todos.add(m8)
                     for b in torres:
                         if b.rect.collidepoint(event.pos):
                             if b.unlocked:
@@ -297,6 +341,13 @@ if __name__ == '__main__':
                                 break
                             '''else:
                                 stats(b, event.pos)'''
+                    for c in coins:
+                        if c.rect.collidepoint(event.pos):
+                            total_coins += 5
+                            print(total_coins)
+                            coins.remove(c)
+                            todos.remove(c)
+                            break
 
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.pos == mp or not colocar(event.pos):
@@ -313,6 +364,8 @@ if __name__ == '__main__':
                                 last.unlocked = False
                                 last.block = b
                                 b.oc = True
+                                total_coins -= costos[last.type]
+                                print(total_coins)
                                 last = None
                             else:
                                 todos.remove(last)
@@ -323,6 +376,10 @@ if __name__ == '__main__':
                     disparos.add(t.dis)
                     todos.add(t.dis)
                     t.dis = None
+                if t.coin != None:
+                    coins.add(t.coin)
+                    todos.add(t.coin)
+                    t.coin = None
                 if t.dead:
                     t.block.oc = False
                     todos.remove(t)
