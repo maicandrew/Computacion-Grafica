@@ -1,5 +1,6 @@
 import random
 import pygame
+from set_images import *
 
 fact = 1300/1400
 tics = 60
@@ -13,35 +14,33 @@ tam = {
 "bloque" : [75,90],
 "gato" : [150,55],
 "generador" : [20,20],
-"balas" : [20,20],
-"enemigos" : [120, 44]
+"balas" : [40,36],
+"enemigos" : [75, 55],
 }
-gatos = dict()
 mapas = dict()
-BLANCO = [255, 255, 255]
 legal = [240,80, 915,530]
 map = pygame.image.load("Mapa1.1.png")
 tam["mapa"] = [int(map.get_width()*fact), int(map.get_height()*fact)]
 map = pygame.transform.scale(map,tam["mapa"])
-mapas[nivel] = map
-gato = pygame.image.load("Gato1.png")
-gato = pygame.transform.scale(gato,tam["gato"])
-gatos[nivel] = gato
+mapas[1] = map
+balas = set_balas(tam["balas"])
+gatos = set_gatos(tam["gato"])
+perros = set_perros(tam["enemigos"])
 ancho = int(map.get_width()/2)
 alto = int(map.get_height())
 
 class mapa(pygame.sprite.Sprite):
-    def __init__(self,image, lim = 29):
+    def __init__(self,image, bit = 29):
         pygame.sprite.Sprite.__init__(self)
         a = tam["mapa"]
         self.image = pygame.Surface.subsurface(image, (0,0,a[0]/2, a[1]))
         self.con = 0
         self.frame = 0
-        self.lim = lim
+        self.bit = bit
         self.rect = self.image.get_rect()
 
     def update(self):
-        if self.con < self.lim:
+        if self.con < self.bit:
             self.con += 1
         else:
             self.frame = (self.frame + 1) % 2
@@ -58,7 +57,7 @@ class Torre (pygame.sprite.Sprite):
         self.frame = 0
         self.con = 0
         self.vel = 0.5
-        self.lvl = 1
+        self.block = None
         self.atk = 0
         self.rect.x = pos[0]
         self.rect.y = pos[1]
@@ -72,18 +71,27 @@ class Torre (pygame.sprite.Sprite):
         if self.click and self.unlocked:
             self.rect.center = pygame.mouse.get_pos()
         else:
-            if self.atk < tics/self.vel:
-                self.atk += 1
-            else:
-                self.dis = Disparo([self.rect.right,self.rect.y], self.type)
-                self.atk = 0
-            if self.con < 10:
-                self.con += 1
-            else:
-                self.frame = (self.frame + 1) % 2
-                self.con = 0
-            if self.health <= 0:
-                self.dead = True
+            if self.type == 4 or self.type == 3:
+                if self.atk < tics/self.vel:
+                    self.atk += 1
+                else:
+                    self.dis = Disparo([self.rect.right,self.rect.y], self.type)
+                    self.atk = 0
+                if self.con < 10:
+                    self.con += 1
+                else:
+                    self.frame = (self.frame + 1) % 2
+                    self.con = 0
+                if self.health <= 0:
+                    self.dead = True
+            elif self.type == 2:
+                if self.con < 10:
+                    self.con += 1
+                else:
+                    self.frame = (self.frame + 1) % 2
+                    self.con = 0
+                if self.health <= 0:
+                    self.dead = True
 
         a =tam["gato"]
         self.image = pygame.Surface.subsurface(gatos[self.type], (a[0]/2*self.frame, 0, a[0]/2, a[1]))
@@ -92,7 +100,7 @@ class Enemigo(pygame.sprite.Sprite):
     def __init__(self, pos, type):
         pygame.sprite.Sprite.__init__(self)
         a = tam["enemigos"]
-        self.image = pygame.Surface([a[0]/2, a[1]])
+        self.image = self.image = pygame.Surface.subsurface(perros[type], (0,0,a[0],a[1]))
         self.rect = self.image.get_rect()
         self.rect.x = pos[0]
         self.rect.y = pos[1]
@@ -100,8 +108,10 @@ class Enemigo(pygame.sprite.Sprite):
         self.frames = 3
         self.action = 0
         self.health = 200
+        self.frame = 2
+        self.damage = 25
         self.atk_speed = 1
-        self.mov_speed = 60
+        self.mov_speed = 500
         self.dead = False
         self.con = 0
         self.atk = 0
@@ -121,19 +131,18 @@ class Enemigo(pygame.sprite.Sprite):
                 self.con += 1
             else:
                 self.con = 0
-            if e.atk < tics/e.atk_speed:
-                    e.atk += 1
+            if self.atk < tics/self.atk_speed:
+                self.atk += 1
             else:
-                e.action = 2
-                e.atk = 0
-                e.con = 0
+                self.action = 2
+                self.frames = 1
+                self.atk = 0
+                self.con = 0
         #Atacando
         elif self.action == 2:
             if self.con <= self.frames:
                 self.con += 1
-                self.image.fill(BLANCO)
             else:
-                self.image.fill(NEGRO)
                 self.action = 1
                 self.atk = 0
                 self.con = 0
@@ -145,25 +154,37 @@ class Enemigo(pygame.sprite.Sprite):
             else:
                 self.dead = True
         if self.health <= 0 and self.action != 3:
+            self.frames = 0
             self.action = 3
             self.con = 0
-        #self.image = pygame.Surface.subsurface(gatos[self.type], (a[0]/2*self.frame, 0, a[0]/2, a[1]))
+        a = tam["enemigos"]
+        en_y = 0
+        if self.action < 2:
+            en_y = self.action
+        else: en_y = self.action - 1
+        self.image = pygame.Surface.subsurface(perros[self.type], (a[0]*self.con, en_y*a[1], a[0], a[1]))
 
 class Disparo(pygame.sprite.Sprite):
     def __init__(self, pos, type):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface(tam["balas"])
-        self.image.fill(NEGRO)
+        a = tam["balas"]
+        self.image = pygame.Surface.subsurface(balas[type], (0, 0, a[0], a[1]))
         self.rect = self.image.get_rect()
-        self.damage = 25*type
+        self.damage = 25
         self.type = type
-        #self.lvl = type
+        self.con = 0
         self.rect.x = pos[0]
         self.rect.y = pos[1]
         self.vel = 120+((type-1)*40)
 
     def update(self):
         self.rect.x += self.vel/tics
+        if self.con <= 2:
+            self.con += 1
+        else:
+            self.con = 0
+        a = tam["balas"]
+        self.image = pygame.Surface.subsurface(balas[self.type], (a[0]*self.con, 0, a[0], a[1]))
 
 def colocar(pos):
     if legal[0] <= pos[0] <= legal[2] and legal[1] <= pos[1] <= legal[3]:
@@ -184,11 +205,12 @@ class Bloque(pygame.sprite.Sprite):
         self.oc = False
 
 class Generador (pygame.sprite.Sprite):
-    def __init__(self, color, pos):
+    def __init__(self, color, pos, type):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface(tam["generador"])
         self.image.fill(color)
         self.rect=self.image.get_rect()
+        self.type = type
         self.rect.x = pos[0]
         self.rect.y = pos[1]
 
@@ -199,15 +221,18 @@ class GeneradorEnemigo (pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.cd = 0
         self.con = 0
-        self.ene = None
+        self.cant = 0
+        self.tope = 3
+        self.gen = 0
 
     def update(self):
         if self.con <= self.cd*tics:
             self.con += 1
-        else:
-            self.ene = Enemigo([915,80], 1)
+        elif self.cant <= self.tope:
+            self.gen = 1
             self.con = 0
-            self.cd = 20
+            self.cd = 10
+            self.cant += 1
 
 
 if __name__ == '__main__':
@@ -226,13 +251,13 @@ if __name__ == '__main__':
     ge = GeneradorEnemigo()
     todos.add(ge)
 
-    g1 = Generador(ROJO, [20,50])
+    g1 = Generador(ROJO, [20,50], 1)
     hud.add(g1)
     todos.add(g1)
-    g2 = Generador(VERDE, [20,100])
+    g2 = Generador(VERDE, [20,100], 2)
     hud.add(g2)
     todos.add(g2)
-    g3 = Generador(BLANCO, [20,150])
+    g3 = Generador(BLANCO, [20,150], 3)
     hud.add(g3)
     todos.add(g3)
 
@@ -247,98 +272,103 @@ if __name__ == '__main__':
     mp = [0,0]
     reloj=pygame.time.Clock()
     fin=False
+    lose = False
+    win = False
+    exit = False
     while not fin:
         #Gestion de eventos
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                fin=True
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if g1.rect.collidepoint(event.pos):
-                    mp = event.pos
-                    m8 = Torre(1, event.pos)
-                    last = m8
-                    torres.add(m8)
-                    todos.add(m8)
-                if g2.rect.collidepoint(event.pos):
-                    mp = event.pos
-                    m8 = Torre(1, event.pos)
-                    last = m8
-                    torres.add(m8)
-                    todos.add(m8)
-                if g3.rect.collidepoint(event.pos):
-                    mp = event.pos
-                    m8 = Torre(1, event.pos)
-                    last = m8
-                    torres.add(m8)
-                    todos.add(m8)
-                for b in torres:
-                    if b.rect.collidepoint(event.pos):
-                        if b.unlocked:
-                            b.click = True
-                            last = b
-                            break
-                        '''else:
-                            stats(b, event.pos)'''
+        while not (lose or win or exit or fin):
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    fin=True
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    for g in hud:
+                        if g.rect.collidepoint(event.pos):
+                            mp = event.pos
+                            m8 = Torre(g.type, event.pos)
+                            last = m8
+                            torres.add(m8)
+                            todos.add(m8)
+                    for b in torres:
+                        if b.rect.collidepoint(event.pos):
+                            if b.unlocked:
+                                b.click = True
+                                last = b
+                                break
+                            '''else:
+                                stats(b, event.pos)'''
 
-            if event.type == pygame.MOUSEBUTTONUP:
-                if event.pos == mp or not colocar(event.pos):
-                    todos.remove(last)
-                    torres.remove(last)
-                    last = None
-                for t in torres:
-                    if t.rect.collidepoint(event.pos):
-                        t.click = False
-                for b in  bloques:
-                    if b.rect.collidepoint(event.pos) and last != None:
-                        if not b.oc:
-                            last.rect.center = b.rect.center
-                            last.unlocked = False
-                            b.oc = True
-                            last = None
-                        else:
-                            todos.remove(last)
-                            torres.remove(last)
-                            last = None
-        for t in torres:
-            if t.dis != None:
-                disparos.add(t.dis)
-                todos.add(t.dis)
-                t.dis = None
-            if t.dead:
-                todos.remove(t)
-                torres.remove(t)
-        if ge.ene != None:
-            enemigos.add(ge.ene)
-            todos.add(ge.ene)
-            ge.ene = None
+                if event.type == pygame.MOUSEBUTTONUP:
+                    if event.pos == mp or not colocar(event.pos):
+                        todos.remove(last)
+                        torres.remove(last)
+                        last = None
+                    for t in torres:
+                        if t.rect.collidepoint(event.pos):
+                            t.click = False
+                    for b in bloques:
+                        if b.rect.collidepoint(event.pos) and last != None:
+                            if not b.oc:
+                                last.rect.center = b.rect.center
+                                last.unlocked = False
+                                last.block = b
+                                b.oc = True
+                                last = None
+                            else:
+                                todos.remove(last)
+                                torres.remove(last)
+                                last = None
+            for t in torres:
+                if t.dis != None:
+                    disparos.add(t.dis)
+                    todos.add(t.dis)
+                    t.dis = None
+                if t.dead:
+                    t.block.oc = False
+                    todos.remove(t)
+                    torres.remove(t)
+            if ge.gen != 0:
+                en = Enemigo([915,80+(random.randint(0,4)*tam["bloque"][1])], 1)
+                enemigos.add(en)
+                todos.add(en)
+                en = None
+                ge.gen = 0
 
-        for d in disparos:
-            if d.rect.x >= ancho:
-                disparos.remove(d)
-                todos.remove(d)
-        for e in enemigos:
-            if e.dead:
-                todos.remove(e)
-                enemigos.remove(e)
-            else:
-                ls_col = pygame.sprite.spritecollide(e, disparos, False)
-                for d in ls_col:
-                    if d.type == 1:
-                        e.health -= 25
-                    todos.remove(d)
+            for d in disparos:
+                if d.rect.x >= ancho:
                     disparos.remove(d)
-                ls_coli = pygame.sprite.spritecollide(e, torres, False)
-                if len(ls_coli) > 0:
-                    for t in ls_coli:
-                        if not t.unlocked and e.action == 0:
-                            e.action = 1
-                        if e.punch:
-                            t.health -= 25
-                            e.punch = False
-                elif not e.dead and not e.action == 3:
-                    e.action = 0
+                    todos.remove(d)
 
-        todos.update()
-        todos.draw(pantalla)
-        pygame.display.flip()
-        reloj.tick(tics)
+            for enemigo in enemigos:
+                if enemigo.rect.x <= legal[0]:
+                    lose = True
+                    print("Pierde")
+                if enemigo.dead or enemigo.rect.x <= 0:
+                    todos.remove(enemigo)
+                    enemigos.remove(enemigo)
+                else:
+                    ls_col = pygame.sprite.spritecollide(enemigo, disparos, False)
+                    for d in ls_col:
+                        enemigo.health -= d.damage
+                        todos.remove(d)
+                        disparos.remove(d)
+                    ls_coli = pygame.sprite.spritecollide(enemigo, torres, False)
+                    if len(ls_coli) > 0:
+                        for t in ls_coli:
+                            if (not t.unlocked) and enemigo.action == 0:
+                                enemigo.action = 1
+                            if enemigo.punch:
+                                t.health -= enemigo.damage
+                                enemigo.punch = False
+                    elif enemigo.action != 3:
+                        enemigo.action = 0
+            if ge.cant > ge.tope:
+                if len(enemigos.sprites()) == 0:
+                    win = True
+                    print("Gana")
+
+            todos.update()
+            todos.draw(pantalla)
+            pygame.display.flip()
+            reloj.tick(tics)
+        fin = True
