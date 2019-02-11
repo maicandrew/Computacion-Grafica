@@ -64,15 +64,20 @@ class Coin(pygame.sprite.Sprite):
         self.image = pygame.Surface.subsurface(moneda, (0,0,a[0], a[1]))
         self.rect = self.image.get_rect()
         self.con = 0
+        self.lag = 0
         self.frames = 9
         self.rect.x = pos[0]
         self.rect.y = pos[1]
 
     def update(self):
-        if self.con < self.frames-1:
-            self.con += 1
+        if self.lag <= 10:
+            self.lag += 1
         else:
-            self.con = 0
+            self.lag = 0
+            if self.con < self.frames-1:
+                self.con += 1
+            else:
+                self.con = 0
         a = tam["moneda"]
         self.image = pygame.Surface.subsurface(moneda, (self.con*a[0], 0, a[0], a[1]))
 
@@ -175,8 +180,9 @@ class Enemigo(pygame.sprite.Sprite):
         self.frame = 2
         self.damage = 25
         self.atk_speed = 1
-        self.mov_speed = 500
+        self.mov_speed = 120
         self.dead = False
+        self.lag = 0
         self.con = 0
         self.atk = 0
         self.punch = False
@@ -184,17 +190,25 @@ class Enemigo(pygame.sprite.Sprite):
     def update(self):
         #Caminar
         if self.action == 0:
-            if self.con < self.frames:
-                self.con += 1
+            if self.lag <= 10:
+                self.lag += 1
             else:
-                self.rect.x -= self.mov_speed/60
-                self.con = 0
+                self.lag = 0
+                if self.con < self.frames:
+                    self.con += 1
+                else:
+                    self.con = 0
+            self.rect.x -= self.mov_speed/tics
         #Parado
         elif self.action == 1:
-            if self.con < self.frames:
-                self.con += 1
+            if self.lag <= 10:
+                self.lag += 1
             else:
-                self.con = 0
+                self.lag = 0
+                if self.con < self.frames:
+                    self.con += 1
+                else:
+                    self.con = 0
             if self.atk < tics/self.atk_speed:
                 self.atk += 1
             else:
@@ -204,19 +218,27 @@ class Enemigo(pygame.sprite.Sprite):
                 self.con = 0
         #Atacando
         elif self.action == 2:
-            if self.con <= self.frames:
-                self.con += 1
+            if self.lag <= 10:
+                self.lag += 1
             else:
-                self.action = 1
-                self.atk = 0
-                self.con = 0
-                self.punch = True
+                self.lag = 0
+                if self.con <= self.frames:
+                    self.con += 1
+                else:
+                    self.action = 1
+                    self.atk = 0
+                    self.con = 0
+                    self.punch = True
         #Muriendo
         elif self.action == 3:
-            if self.con <= self.frames:
-                self.con += 1
+            if self.lag <= 10:
+                self.lag += 1
             else:
-                self.dead = True
+                self.lag = 0
+                if self.con <= self.frames:
+                    self.con += 1
+                else:
+                    self.dead = True
         if self.health <= 0 and self.action != 3:
             self.frames = 0
             self.action = 3
