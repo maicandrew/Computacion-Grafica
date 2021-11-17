@@ -11,7 +11,7 @@ def set_gatos(tam):
     gato = pygame.image.load("Juego/Mapa y gatos/Gato3lv1.png")
     gato = pygame.transform.scale(gato,tam)
     gatos[3] = gato
-    gato = pygame.image.load("Gato1.png")
+    gato = pygame.image.load("Juego/Mapa y gatos/Gato4lv1.png")
     gato = pygame.transform.scale(gato,tam)
     gatos[4] = gato
     gato = pygame.image.load("Juego/Mapa y gatos/Gato1lv2.png")
@@ -23,7 +23,7 @@ def set_gatos(tam):
     gato = pygame.image.load("Juego/Mapa y gatos/Gato3lv2.png")
     gato = pygame.transform.scale(gato,tam)
     gatos[7] = gato
-    gato = pygame.image.load("Gato1.png")
+    gato = pygame.image.load("Juego/Mapa y gatos/Gato4lv2.png")
     gato = pygame.transform.scale(gato,tam)
     gatos[8] = gato
     gato = pygame.image.load("Juego/Mapa y gatos/Gato1lv3.png")
@@ -35,7 +35,7 @@ def set_gatos(tam):
     gato = pygame.image.load("Juego/Mapa y gatos/Gato3lv3.png")
     gato = pygame.transform.scale(gato,tam)
     gatos[11] = gato
-    gato = pygame.image.load("Gato1.png")
+    gato = pygame.image.load("Juego/Mapa y gatos/Gato4lv3.png")
     gato = pygame.transform.scale(gato,tam)
     gatos[12] = gato
     return gatos
@@ -90,6 +90,46 @@ def set_balas(tam):
     balas[3] = bala
     balas[4] = bala
     return balas
+
+def set_cartas(tam):
+    cartas = dict()
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 1.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[1] = carta
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 7.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[2] = carta
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 4.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[3] = carta
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 10.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[4] = carta
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 2.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[5] = carta
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 8.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[6] = carta
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 5.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[7] = carta
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 11.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[8] = carta
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 3.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[9] = carta
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 9.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[10] = carta
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 6.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[11] = carta
+    carta = pygame.image.load("Juego/Cartas y mejoras/Carta 12.png")
+    carta = pygame.transform.scale(carta, tam)
+    cartas[12] = carta
+    return cartas
 
 def set_mapas(factor):
     mapas = dict()

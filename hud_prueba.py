@@ -13,7 +13,8 @@ tam = dict()
 tam = {
 "bloque" : [75,90],
 "gato" : [150,55],
-"generador" : [20,20],
+"generador" : [75,100],
+"cartas" : [200, 270],
 "balas" : [40,36],
 "enemigos" : [75, 55],
 "moneda" : [25, 25]
@@ -26,10 +27,11 @@ moneda = pygame.transform.scale(moneda, [tam["moneda"][0], tam["moneda"][1]])
 costos = dict()
 costos = {
 1 : 5,
-2 : 10,
-3 : 20,
-4 : 30,
+2 : 15,
+3 : 10,
+4 : 15,
 }
+cartas = set_cartas(tam["cartas"])
 balas = set_balas(tam["balas"])
 gatos = set_gatos(tam["gato"])
 perros = set_perros(tam["enemigos"])
@@ -63,6 +65,7 @@ class Coin(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.con = 0
         self.dur = 15
+        self.des = False
         self.frames = 9
         self.rect.x = pos[0]
         self.rect.y = pos[1]
@@ -70,6 +73,8 @@ class Coin(pygame.sprite.Sprite):
     def update(self):
         if self.con <= self.dur*tics:
             self.con += 1
+        else:
+            self.des = True
         a = tam["moneda"]
         self.image = pygame.Surface.subsurface(moneda, (0, 0, a[0], a[1]))
 
@@ -242,6 +247,15 @@ class Enemigo(pygame.sprite.Sprite):
         else: en_y = self.action - 1
         self.image = pygame.Surface.subsurface(perros[self.type], (a[0]*self.con, en_y*a[1], a[0], a[1]))
 
+class Carta(pygame.sprite.Sprite):
+    def __init__(self, pos, type):
+        pygame.sprite.Sprite.__init__(self)
+        a = tam["cartas"]
+        self.image = pygame.Surface.subsurface(cartas[type], (0, 0, a[0], a[1]))
+        self.rect = self.image.get_rect()
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
 def colocar(pos):
     if legal[0] <= pos[0] <= legal[2] and legal[1] <= pos[1] <= legal[3]:
         return True
@@ -263,8 +277,8 @@ class Bloque(pygame.sprite.Sprite):
 class Generador (pygame.sprite.Sprite):
     def __init__(self, pos, type):
         pygame.sprite.Sprite.__init__(self)
-        a = tam["gato"]
-        self.image = pygame.Surface.subsurface(gatos[type], (0, 0,a[0]/2, a[1]))
+        a = tam["generador"]
+        self.image = pygame.Surface.subsurface(pygame.transform.scale(cartas[type], a), (0, 0,a[0], a[1]))
         self.rect=self.image.get_rect()
         self.type = type
         self.rect.x = pos[0]
@@ -302,7 +316,7 @@ if __name__ == '__main__':
     hud = pygame.sprite.Group()
     disparos = pygame.sprite.Group()
     coins = pygame.sprite.Group()
-    mapita = mapa(1)
+    mapita = mapa(nivel)
     ge = GeneradorEnemigo()
     todos.add(mapita)
     todos.add(ge)
@@ -331,6 +345,7 @@ if __name__ == '__main__':
     lose = False
     win = False
     exit = False
+    card = None
     total_coins = 100
     while not fin:
         #Gestion de eventos
@@ -339,6 +354,8 @@ if __name__ == '__main__':
                 if event.type == pygame.QUIT:
                     fin=True
                 if event.type == pygame.MOUSEBUTTONDOWN:
+                    if card != None:
+                        todos.remove(card)
                     for g in hud:
                         if g.rect.collidepoint(event.pos):
                             if total_coins >= costos[g.type]:
@@ -353,9 +370,13 @@ if __name__ == '__main__':
                                 b.click = True
                                 last = b
                                 break
-                            '''else:
-                                stats(b, event.pos)'''
+                            else:
+                                card = Carta([b.rect.right, b.rect.y], b.type)
+                                todos.add(card)
                     for c in coins:
+                        if c.des:
+                            coins.remove(c)
+                            todos.remove(c)
                         if c.rect.collidepoint(event.pos):
                             total_coins += 5
                             print(total_coins)
