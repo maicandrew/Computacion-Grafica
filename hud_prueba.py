@@ -1,6 +1,7 @@
 import random
 import pygame
 from set_images import *
+from set_sounds import *
 #Inicia setting de variables globales
 pygame.init()
 fact = 1300/1400
@@ -23,12 +24,26 @@ tam = {
 "moneda" : [25, 25],
 "arco" : [50, 50],
 "rayo" : [313, 56],
-"espada" : [90, 75]
+"espada" : [90, 75],
+"boton" : [100, 20]
 }
 mapas = set_mapas(fact)
 tam["mapa"] = [int(mapas[1][0].get_width()), int(mapas[1][0].get_height())]
-moneda = pygame.image.load("Juego/Mapa y gatos/Moneda.png")
-moneda = pygame.transform.scale(moneda, [tam["moneda"][0], tam["moneda"][1]])
+healths = dict()
+healths = {
+1 : 3,
+2 : 10,
+3 : 4,
+4 : 5,
+5 : 3,
+6 : 15,
+7 : 4,
+8 : 5,
+9 : 3,
+10 : 25,
+11 : 6,
+12 : 5,
+}
 costos = dict()
 costos = {
 1 : 5,
@@ -64,6 +79,9 @@ balas = set_balas(tam["balas"], tam["rayo"], tam["espada"])
 gatos = set_gatos(tam["gato"])
 perros = set_perros(tam["enemigos"])
 bosses = set_boss(tam["enemigos"])
+monedas = set_monedas(tam["moneda"])
+botones = set_botones(0.5)
+sounds_gatos = set_sounds_gatos()
 arco = pygame.image.load("Juego/Cartas y mejoras/arco.png")
 arco = pygame.transform.scale(arco, tam["arco"])
 ancho = tam["mapa"][0]
@@ -106,7 +124,7 @@ class Coin(pygame.sprite.Sprite):
     def __init__(self, pos, value):
         pygame.sprite.Sprite.__init__(self)
         a = tam["moneda"]
-        self.image = pygame.Surface.subsurface(moneda, (0,0,a[0], a[1]))
+        self.image = pygame.Surface.subsurface(monedas[value], (0,0,a[0], a[1]))
         self.rect = self.image.get_rect()
         self.con = 0
         self.dur = 15
@@ -122,7 +140,7 @@ class Coin(pygame.sprite.Sprite):
         else:
             self.des = True
         a = tam["moneda"]
-        self.image = pygame.Surface.subsurface(moneda, (0, 0, a[0], a[1]))
+        self.image = pygame.Surface.subsurface(monedas[self.value], (0, 0, a[0], a[1]))
 
 class Disparo(pygame.sprite.Sprite):
     def __init__(self, pos, type):
@@ -219,7 +237,7 @@ class Torre (pygame.sprite.Sprite):
         self.atk = 0
         self.rect.x = pos[0]
         self.rect.y = pos[1]
-        self.health = 200
+        self.health = healths[type]
         self.perro = False
         self.click = True
         self.dead = False
@@ -562,14 +580,15 @@ class Texto(pygame.sprite.Sprite):
 class Pausa(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface([500,300])
+        image = pygame.image.load("Juego/Menus/Cajon.png")
+        self.image = pygame.transform.scale(image, [200, 140])
         self.rect = self.image.get_rect()
         self.rect.center = [int(ancho/2), int(alto/2)]
 
 class Boton(pygame.sprite.Sprite):
-    def __init__(self, pos, image, tama):
+    def __init__(self, pos, text = 0):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface(tama)
+        self.image = botones[text]
         self.rect = self.image.get_rect()
         self.rect.x = pos[0]
         self.rect.y = pos[1]
@@ -628,7 +647,7 @@ def in_game(sc, lvl):
     todos.add(mapita)
     todos.add(ge)
 
-    botonpausa = Boton([0,0], arco, [20, 20])
+    botonpausa = Boton([0,0],)
     todos.add(botonpausa)
 
     g1 = Generador([20,30], 1)
@@ -664,7 +683,7 @@ def in_game(sc, lvl):
     card = None
     bow = None
     total_coins = 100
-    text = Texto([0,0], str(total_coins))
+    text = Texto([200,0], str(total_coins))
     todos.add(text)
     pygame.mixer.music.load("Juego/Sonidos/Mapa1.mp3")
     pygame.mixer.music.play(-1)
@@ -791,21 +810,27 @@ def in_game(sc, lvl):
                             #Genera el disparo
                             disparos.add(t.dis)
                             todos.add(t.dis)
-                            dis = pygame.mixer.Sound("C:/FFOutput/Gatolv1-2.wav")
+                            dis = sounds_gatos[t.type]
                             dis.play()
                             t.dis = None
                         if t.rayo != None:
                             rayos.add(t.rayo)
                             todos.add(t.rayo)
+                            dis = sounds_gatos[t.type]
+                            dis.play()
                             t.rayo = None
                         if t.coin != None:
                             #Genera la moneda
                             coins.add(t.coin)
                             todos.add(t.coin)
+                            dis = sounds_gatos[t.type]
+                            dis.play()
                             t.coin = None
                         if t.sw != None:
                             espadas.add(t.sw)
                             todos.add(t.sw)
+                            dis = sounds_gatos[t.type]
+                            dis.play()
                             t.sw = None
                 if ge.gen != 0:
                     if ge.cant <= ge.tope:
@@ -828,7 +853,7 @@ def in_game(sc, lvl):
                                 win = True
 
                 todos.remove(text)
-                text = Texto([0,0], str(total_coins))
+                text = Texto([200,0], str(total_coins))
                 todos.add(text)
 
                 for d in disparos:
@@ -883,8 +908,7 @@ def in_game(sc, lvl):
                                 disparo_enemigo.add(dis)
                                 todos.add(dis)
                                 enemigo.punch = False
-                            col = pygame.sprite.spritecollide(enemigo, torres, False)
-                            if len(col) > 0:
+                            if len(ls_coli) > 0:
                                 enemigo.t =  True
                             else:
                                 enemigo.t = False
@@ -906,23 +930,45 @@ def in_game(sc, lvl):
             else:
                 pygame.mixer.music.pause()
                 pausa = Pausa()
-                while not(exit) and pause:
+                continuar = Boton([int((ancho / 2) - 100), int((alto / 2) - 40)], "continuar")
+                salir = Boton([continuar.rect.x + 55, continuar.rect.bottom + 20], "salir")
+                sc.blit(pausa.image, [pausa.rect.x, pausa.rect.y])
+                sc.blit(continuar.image, [continuar.rect.x, continuar.rect.y])
+                sc.blit(salir.image, [salir.rect.x, salir.rect.y])
+                pygame.display.flip()
+                while not(exit or fin) and pause:
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
                             fin=True
                         if event.type == pygame.MOUSEBUTTONDOWN:
-                            if pausa.rect.collidepoint(event.pos):
+                            if continuar.rect.collidepoint(event.pos):
                                 pause = False
                                 pygame.mixer.music.unpause()
-                            else:
+                            elif salir.rect.collidepoint(event.pos):
                                 exit = True
         else:
             fin = True
             pygame.mixer.music.stop()
     if win:
-        in_game(sc, 2)
-    if lose:
+        Transition(sc, lvl)
+    if lose or exit:
         Menu()
+
+def Transition(sc, lvl):
+    next = False
+    boton = Boton([1150, 520], "continuar")
+    sc.fill(NEGRO)
+    sc.blit(boton.image, [boton.rect.x, boton.rect.y])
+    pygame.display.flip()
+    while not next:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                next=True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if boton.rect.collidepoint(event.pos):
+                    next = True
+                    lvl += 1
+                    in_game(sc, lvl)
 
 def Menu():
     menu = False

@@ -1,11 +1,12 @@
 6 Oleadas
 Pesos por oleadas
-Primer boss
+Primer boss - Done
 Salto del segundo boss
 Ataque del gato Tank - Done
 Soltar una moneda por enemigo - Done
 Efectos de sonido - On going
 Videos - No aplica
+Tutorial
 Sprites - On going
 Menu
 Sonido de explosion

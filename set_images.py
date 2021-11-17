@@ -176,3 +176,36 @@ def set_boss(tam):
     jefe = pygame.transform.scale(jefe, [tam[0]*6, tam[1]*3])
     jefes[2] = jefe
     return jefes
+
+def set_botones(fact):
+    botones = dict()
+    boton = pygame.image.load("Juego/Menus/Continuar.png")
+    boton = pygame.transform.scale(boton, [int(boton.get_width()*fact), int(boton.get_height()*fact)])
+    botones["continuar"] = boton
+    boton = pygame.image.load("Juego/Menus/Play.png")
+    boton = pygame.transform.scale(boton, [int(boton.get_width()*fact), int(boton.get_height()*fact)])
+    botones["jugar"] = boton
+    boton = pygame.image.load("Juego/Menus/Salir.png")
+    boton = pygame.transform.scale(boton, [int(boton.get_width()*fact), int(boton.get_height()*fact)])
+    botones["salir"] = boton
+    boton = pygame.image.load("Juego/Menus/Historia.png")
+    boton = pygame.transform.scale(boton, [int(boton.get_width()*fact), int(boton.get_height()*fact)])
+    botones["historia"] = boton
+    botones[0] = pygame.Surface([20,20])
+    return botones
+
+def set_monedas(tam):
+    monedas = dict()
+    moneda = pygame.image.load("Juego/Sistema de economia/Moneda1.png")
+    moneda = pygame.transform.scale(moneda, tam)
+    monedas[1] = moneda
+    moneda = pygame.image.load("Juego/Sistema de economia/Moneda3.png")
+    moneda = pygame.transform.scale(moneda, tam)
+    monedas[3] = moneda
+    moneda = pygame.image.load("Juego/Sistema de economia/Moneda5.png")
+    moneda = pygame.transform.scale(moneda, tam)
+    monedas[5] = moneda
+    moneda = pygame.image.load("Juego/Sistema de economia/Moneda.png")
+    moneda = pygame.transform.scale(moneda, tam)
+    monedas[0] = moneda
+    return monedas
