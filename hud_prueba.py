@@ -1,7 +1,7 @@
 import random
 import pygame
 from set_images import *
-
+#Inicia setting de variables globales
 fact = 1300/1400
 tics = 60
 NEGRO = [0, 0, 0]
@@ -10,6 +10,7 @@ ROJO = [255, 0, 0]
 BLANCO = [255, 255, 255]
 nivel = 1
 tam = dict()
+#Diccionario de tamaños
 tam = {
 "bloque" : [75,90],
 "gato" : [150,55],
@@ -37,6 +38,7 @@ gatos = set_gatos(tam["gato"])
 perros = set_perros(tam["enemigos"])
 ancho = tam["mapa"][0]
 alto = tam["mapa"][1]
+#Termina setting de variables globales
 
 class mapa(pygame.sprite.Sprite):
     def __init__(self, lvl, bit = 29):
@@ -357,6 +359,7 @@ if __name__ == '__main__':
                     if card != None:
                         todos.remove(card)
                     for g in hud:
+                        #Verifica qué generador quiere usar
                         if g.rect.collidepoint(event.pos):
                             if total_coins >= costos[g.type]:
                                 mp = event.pos
@@ -366,17 +369,21 @@ if __name__ == '__main__':
                                 todos.add(m8)
                     for b in torres:
                         if b.rect.collidepoint(event.pos):
+                            #Hace que la torre siga el mouse
                             if b.unlocked:
                                 b.click = True
                                 last = b
                                 break
                             else:
+                                #Muestra la carta de stats
                                 card = Carta([b.rect.right, b.rect.y], b.type)
                                 todos.add(card)
                     for c in coins:
+                        #verifica si la moneda lleva mucho tiempo y desaparece
                         if c.des:
                             coins.remove(c)
                             todos.remove(c)
+                        #Verifica si se da click en la moneda para recolectarla
                         if c.rect.collidepoint(event.pos):
                             total_coins += 5
                             print(total_coins)
@@ -386,15 +393,18 @@ if __name__ == '__main__':
 
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.pos == mp or not colocar(event.pos):
+                        #Si la torre está fuera de lugar, desaparece
                         todos.remove(last)
                         torres.remove(last)
                         last = None
                     for t in torres:
+                        #Suelta la torre
                         if t.rect.collidepoint(event.pos):
                             t.click = False
                     for b in bloques:
                         if b.rect.collidepoint(event.pos) and last != None:
                             if not b.oc:
+                                #Si el bloque no está ocupado, pone la torre
                                 last.rect.center = b.rect.center
                                 last.unlocked = False
                                 last.block = b
@@ -403,23 +413,28 @@ if __name__ == '__main__':
                                 print(total_coins)
                                 last = None
                             else:
+                                #Si el bloque está ocupado, desaparece la torre que iba a poner
                                 todos.remove(last)
                                 torres.remove(last)
                                 last = None
             for t in torres:
                 if t.dis != None:
+                    #Genera el disparo
                     disparos.add(t.dis)
                     todos.add(t.dis)
                     t.dis = None
                 if t.coin != None:
+                    #Genera la moneda
                     coins.add(t.coin)
                     todos.add(t.coin)
                     t.coin = None
                 if t.dead:
+                    #Verifica si la torre está muerta y desocupa el bloque
                     t.block.oc = False
                     todos.remove(t)
                     torres.remove(t)
             if ge.gen != 0:
+                #Genera un enemigo en una línea al azar
                 en = Enemigo([915,80+(random.randint(0,4)*tam["bloque"][1])], 1)
                 enemigos.add(en)
                 todos.add(en)
@@ -427,24 +442,30 @@ if __name__ == '__main__':
                 ge.gen = 0
 
             for d in disparos:
+                #elimina el disparo si pasó el limite de la pantalla
                 if d.rect.x >= ancho:
                     disparos.remove(d)
                     todos.remove(d)
 
             for enemigo in enemigos:
                 if enemigo.rect.x <= legal[0]:
+                    #Pierde si un enemigo llega a la zona izquierda del jardín
                     lose = True
                     print("Pierde")
-                if enemigo.dead or enemigo.rect.x <= 0:
+                if enemigo.dead:
+                    #Borra al enemigo si está muerto
                     todos.remove(enemigo)
                     enemigos.remove(enemigo)
                 else:
+                    #Verifica las colisiones con los disparos
                     ls_col = pygame.sprite.spritecollide(enemigo, disparos, False)
                     for d in ls_col:
                         enemigo.health -= d.damage
                         todos.remove(d)
                         disparos.remove(d)
+                    #Verifica las colisiones con las torres
                     ls_coli = pygame.sprite.spritecollide(enemigo, torres, False)
+                    #If para prevenir  que se queden parados si matan al gato que estaban atacando
                     if len(ls_coli) > 0:
                         for t in ls_coli:
                             if (not t.unlocked) and enemigo.action == 0:
@@ -454,6 +475,7 @@ if __name__ == '__main__':
                                 enemigo.punch = False
                     elif enemigo.action != 3:
                         enemigo.action = 0
+            #Condición de victoria cutre
             if ge.cant > ge.tope:
                 if len(enemigos.sprites()) == 0:
                     win = True
