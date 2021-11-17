@@ -1,0 +1,16 @@
+﻿6 Oleadas
+Pesos por oleadas
+Primer boss - Done
+Salto del segundo boss
+Ataque del gato Tank - Done
+Soltar una moneda por enemigo - Done
+Efectos de sonido - On going
+Videos - No aplica
+Tutorial - Done
+Sprites - Done
+Menu
+Sonido de explosion - Done
+Quitar gatos - No aplica
+Botón de pausa - Done
+Miau of legends - Done
+Escena final  - Done
