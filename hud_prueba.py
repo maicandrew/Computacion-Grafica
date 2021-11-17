@@ -23,7 +23,7 @@ tam = {
 "moneda" : [25, 25],
 "arco" : [50, 50],
 "rayo" : [313, 56],
-"linea" : [legal[2] - legal[0], int((legal[3]-legal[1])/5)]
+"espada" : [90, 75]
 }
 mapas = set_mapas(fact)
 tam["mapa"] = [int(mapas[1][0].get_width()), int(mapas[1][0].get_height())]
@@ -60,7 +60,7 @@ damage = {
 12 : 6,
 }
 cartas = set_cartas(tam["cartas"])
-balas = set_balas(tam["balas"], tam["rayo"])
+balas = set_balas(tam["balas"], tam["rayo"], tam["espada"])
 gatos = set_gatos(tam["gato"])
 perros = set_perros(tam["enemigos"])
 bosses = set_boss(tam["enemigos"])
@@ -68,6 +68,8 @@ arco = pygame.image.load("Juego/Cartas y mejoras/arco.png")
 arco = pygame.transform.scale(arco, tam["arco"])
 ancho = tam["mapa"][0]
 alto = tam["mapa"][1]
+
+tam["linea"] = [ancho - legal[0], int((legal[3] - legal[1]) / 5)]
 #Termina setting de variables globales
 
 class mapa(pygame.sprite.Sprite):
@@ -101,7 +103,7 @@ class Arco(pygame.sprite.Sprite):
         self.rect.y = pos[1]
 
 class Coin(pygame.sprite.Sprite):
-    def __init__(self, pos):
+    def __init__(self, pos, value):
         pygame.sprite.Sprite.__init__(self)
         a = tam["moneda"]
         self.image = pygame.Surface.subsurface(moneda, (0,0,a[0], a[1]))
@@ -109,6 +111,7 @@ class Coin(pygame.sprite.Sprite):
         self.con = 0
         self.dur = 15
         self.des = False
+        self.value = value
         self.frames = 9
         self.rect.x = pos[0]
         self.rect.y = pos[1]
@@ -161,6 +164,30 @@ class Rayo(pygame.sprite.Sprite):
         a = tam["rayo"]
         self.image = pygame.Surface.subsurface(balas[self.type], (0, self.con*a[1], a[0], a[1]))
 
+class Espada(pygame.sprite.Sprite):
+    def __init__(self, pos, type):
+        pygame.sprite.Sprite.__init__(self)
+        a = tam["espada"]
+        self.image = pygame.Surface.subsurface(balas[type], (0, 0, a[0], a[1]))
+        self.rect = self.image.get_rect()
+        self.rect.center = pos
+        self.type = type
+        self.lag = 0
+        self.con = 0
+        self.des = False
+
+    def update(self):
+        if self.lag <= 10:
+            self.lag += 1
+        elif self.con < 3:
+            self.con += 1
+            self.lag = 0
+        else:
+            self.des = True
+        if self.type == 10:
+            a= tam["espada"]
+            self.image = pygame.Surface.subsurface(balas[self.type], (a[0]*self.con,0,a[0], a[1]))
+
 class Torre (pygame.sprite.Sprite):
     def __init__(self, type, pos):
         pygame.sprite.Sprite.__init__(self)
@@ -173,6 +200,7 @@ class Torre (pygame.sprite.Sprite):
         self.vel = 0.5
         self.block = None
         self.lin = None
+        self.range = None
         self.atk = 0
         self.rect.x = pos[0]
         self.rect.y = pos[1]
@@ -183,6 +211,7 @@ class Torre (pygame.sprite.Sprite):
         self.unlocked = True
         self.dis = None
         self.rayo = None
+        self.sw = None
         self.coin = None
 
     def upgrade(self):
@@ -199,7 +228,7 @@ class Torre (pygame.sprite.Sprite):
                 if self.atk < tics/self.vel:
                     self.atk += 1
                 else:
-                    self.coin = Coin([self.rect.right,self.rect.y])
+                    self.coin = Coin([self.rect.right,self.rect.y], int((self.type+1)/2))
                     self.atk = 0
                 if self.con < 10:
                     self.con += 1
@@ -241,6 +270,14 @@ class Torre (pygame.sprite.Sprite):
                 if self.health <= 0:
                     self.dead = True
             elif self.type == 2 or self.type == 6 or self.type == 10:
+                if self.atk < tics/self.vel:
+                    if self.perro:
+                        self.atk += 1
+                    else:
+                        self.atk = 0
+                else:
+                    self.sw = Espada([self.rect.right, self.rect.y], self.type)
+                    self.atk = 0
                 if self.con < 10:
                     self.con += 1
                 else:
@@ -312,7 +349,7 @@ class Enemigo(pygame.sprite.Sprite):
                 self.lag += 1
             else:
                 self.lag = 0
-                if self.con <= self.frames-1:
+                if self.con < self.frames-1:
                     self.con += 1
                 else:
                     self.action = 1
@@ -327,7 +364,7 @@ class Enemigo(pygame.sprite.Sprite):
                 self.lag += 1
             else:
                 self.lag = 0
-                if self.con <= self.frames-1:
+                if self.con < self.frames-1:
                     self.con += 1
                 else:
                     self.dead = True
@@ -453,13 +490,12 @@ class Bloque(pygame.sprite.Sprite):
         self.oc = False
 
 class Linea(pygame.sprite.Sprite):
-    def __init__(self, pos):
+    def __init__(self, pos, tama):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface(tam["linea"])
+        self.image = pygame.Surface(tama)
         self.rect = self.image.get_rect()
         self.rect.x = pos[0]
         self.rect.y = pos[1]
-        self.en = False
 
 class Texto(pygame.sprite.Sprite):
     def __init__(self, pos, texto):
@@ -478,11 +514,13 @@ class Pausa(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = [int(ancho/2), int(alto/2)]
 
-class BotonPausa(pygame.sprite.Sprite):
-    def __init__(self):
+class Boton(pygame.sprite.Sprite):
+    def __init__(self, pos, image):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface([20,20])
         self.rect = self.image.get_rect()
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
 
 class Generador (pygame.sprite.Sprite):
     def __init__(self, pos, type):
@@ -527,6 +565,8 @@ def in_game(sc, lvl):
     enemigos = pygame.sprite.Group()
     hud = pygame.sprite.Group()
     disparos = pygame.sprite.Group()
+    espadas = pygame.sprite.Group()
+    rangos = pygame.sprite.Group()
     coins = pygame.sprite.Group()
     rayos = pygame.sprite.Group()
     lineas = pygame.sprite.Group()
@@ -535,7 +575,7 @@ def in_game(sc, lvl):
     todos.add(mapita)
     todos.add(ge)
 
-    botonpausa = BotonPausa()
+    botonpausa = Boton([0,0], arco)
     todos.add(botonpausa)
 
     g1 = Generador([20,30], 1)
@@ -557,7 +597,7 @@ def in_game(sc, lvl):
         for i in range(9):
             bloque = Bloque([x + (i*tam["bloque"][0]), y + (j*tam["bloque"][1])])
             bloques.add(bloque)
-        linea = Linea([x, y + (j*tam["linea"][1])])
+        linea = Linea([x, y + (j*tam["linea"][1])], tam["linea"])
         lineas.add(linea)
 
     last = None
@@ -605,7 +645,6 @@ def in_game(sc, lvl):
                                     mp = event.pos
                                     m8 = Torre(g.type, event.pos)
                                     last = m8
-                                    torres.add(m8)
                                     todos.add(m8)
                         for b in torres:
                             if b.rect.collidepoint(event.pos):
@@ -627,7 +666,7 @@ def in_game(sc, lvl):
                                 todos.remove(c)
                             #Verifica si se da click en la moneda para recolectarla
                             if c.rect.collidepoint(event.pos):
-                                total_coins += 5
+                                total_coins += c.value
                                 print(total_coins)
                                 coins.remove(c)
                                 todos.remove(c)
@@ -637,7 +676,6 @@ def in_game(sc, lvl):
                         if event.pos == mp or not colocar(event.pos):
                             #Si la torre está fuera de lugar, desaparece
                             todos.remove(last)
-                            torres.remove(last)
                             last = None
                         for t in torres:
                             #Suelta la torre
@@ -647,7 +685,16 @@ def in_game(sc, lvl):
                         for b in bloques:
                             if b.rect.collidepoint(event.pos) and last != None:
                                 if not b.oc:
+                                    if last.type in [3, 7, 11]:
+                                        lin_col = pygame.sprite.spritecollide(last, lineas, False)
+                                        for l in lin_col:
+                                            last.lin = l
+                                            break
+                                    elif last.type in [4, 8, 12]:
+                                        last.range = Linea([last.rect.right, last.rect.y], tam["rayo"])
+                                        rangos.add(last.range)
                                     #Si el bloque no está ocupado, pone la torre
+                                    torres.add(last)
                                     last.rect.center = b.rect.center
                                     last.unlocked = False
                                     last.block = b
@@ -658,9 +705,24 @@ def in_game(sc, lvl):
                                 else:
                                     #Si el bloque está ocupado, desaparece la torre que iba a poner
                                     todos.remove(last)
-                                    torres.remove(last)
                                     last = None
                 for t in torres:
+                    if t.lin != None:
+                        lin_ene = pygame.sprite.spritecollide(t.lin, enemigos, False)
+                        if len(lin_ene) > 0:
+                            t.perro = True
+                        else: t.perro = False
+                    elif t.type in [2, 6, 10]:
+                        t_col = pygame.sprite.spritecollide(t, enemigos, False)
+                        if len(t_col) > 0:
+                            t.perro = True
+                        else: t.perro = False
+                    elif t.type in [4, 8, 12]:
+                        r_col = pygame.sprite.spritecollide(t.range, enemigos, False)
+                        if len(r_col):
+                            t.perro = True
+                        else:
+                            t.perro = False
                     if t.dis != None:
                         #Genera el disparo
                         disparos.add(t.dis)
@@ -677,6 +739,10 @@ def in_game(sc, lvl):
                         coins.add(t.coin)
                         todos.add(t.coin)
                         t.coin = None
+                    if t.sw != None:
+                        espadas.add(t.sw)
+                        todos.add(t.sw)
+                        t.sw = None
                     if t.dead:
                         #Verifica si la torre está muerta y desocupa el bloque
                         t.block.oc = False
@@ -684,7 +750,7 @@ def in_game(sc, lvl):
                         torres.remove(t)
                 if ge.gen != 0:
                     if ge.cant <= ge.tope:
-                        #Genera un enemigo en una línea al azar
+                        #Genera un e, nemigo en una línea al azar
                         en = Enemigo([915,80+(random.randint(0,4)*tam["bloque"][1])], 1)
                         enemigos.add(en)
                         todos.add(en)
@@ -717,18 +783,10 @@ def in_game(sc, lvl):
                         rayos.remove(r)
                         todos.remove(r)
 
-                for l in lineas:
-                    lin_ene = pygame.sprite.spritecollide(l, enemigos, False)
-                    if len(lin_ene) > 0:
-                        l.en = True
-                    else: l.en = False
-                    lin_ali = pygame.sprite.spritecollide(l, torres, False)
-                    for t in lin_ali:
-                        t.lin = l
-                        if l.en:
-                            t.perro = True
-                        else:
-                            t.perro = False
+                for e in espadas:
+                    if e.des:
+                        espadas.remove(e)
+                        todos.remove(e)
 
                 for enemigo in enemigos:
                     if enemigo.rect.x <= legal[0]:
@@ -737,6 +795,9 @@ def in_game(sc, lvl):
                         print("Pierde")
                     if enemigo.dead:
                         #Borra al enemigo si está muerto
+                        c = Coin(enemigo.rect.center, 1)
+                        coins.add(c)
+                        todos.add(c)
                         todos.remove(enemigo)
                         enemigos.remove(enemigo)
                     else:
@@ -748,8 +809,13 @@ def in_game(sc, lvl):
                             disparos.remove(d)
                         #Verifica las colisiones con los disparos
                         ls_col2 = pygame.sprite.spritecollide(enemigo, rayos, False)
-                        for d in ls_col2:
-                            enemigo.health -= damage[d.type]
+                        for r in ls_col2:
+                            enemigo.health -= damage[r.type]
+
+                        ls_col3 = pygame.sprite.spritecollide(enemigo, espadas, False)
+                        for es in ls_col3:
+                            if es.con == 10:
+                                enemigo.health -= damage[es.type]
 
                         #Verifica las colisiones con las torres
                         ls_coli = pygame.sprite.spritecollide(enemigo, torres, False)
@@ -779,6 +845,7 @@ def in_game(sc, lvl):
                         if event.type == pygame.MOUSEBUTTONDOWN:
                             if pausa.rect.collidepoint(event.pos):
                                 pause = False
+                                pygame.mixer.music.unpause()
                             else:
                                 exit = True
         fin = True

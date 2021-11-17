@@ -2,13 +2,13 @@
 Pesos por oleadas
 Primer boss
 Salto del segundo boss
-Soltar una moneda por enemigo
-Efectos de sonido
-Videos
+Ataque del gato Tank - Done
+Soltar una moneda por enemigo - Done
+Efectos de sonido - On going
+Videos - No aplica
 Sprites - On going
 Menu
 Sonido de explosion
-Boton de quitar gatos
-Quitar gatos
+Quitar gatos - No aplica
 Botón de pausa - Done
 Miau of legends - Done

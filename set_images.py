@@ -80,24 +80,33 @@ def set_perros(tam):
     perros[12] = perro'''
     return perros
 
-def set_balas(tam, tam2):
+def set_balas(tam, tam2, tam3):
     balas = dict()
     bala = pygame.image.load("Juego/Mapa y gatos/disparos.png")
     bala = pygame.transform.scale(bala, [tam[0]*4, tam[1]*4])
     bala = pygame.Surface.subsurface(bala, (0, bala.get_height()*3/4, bala.get_width(), bala.get_height()*1/4))
+    espada = pygame.image.load("Juego/Mapa y gatos/EfectoEspadaLv1.png")
+    espada = pygame.transform.scale(espada, [tam3[0], tam3[1]])
+    espada = pygame.Surface.subsurface(espada, (0, 0, espada.get_width(), espada.get_height()))
     balas[1] = bala
-    balas[2] = bala
+    balas[2] = espada
     balas[3] = bala
     bala1 = pygame.image.load("Juego/Mapa y gatos/Hechisolv2-3.png")
     bala1 = pygame.transform.scale(bala1, [tam2[0]*2, tam2[1]*10])
     bala1 = pygame.Surface.subsurface(bala1, (0, 0, bala1.get_width(), bala1.get_height()))
     balas[4] = bala1
+    espada = pygame.image.load("Juego/Mapa y gatos/EfectoEspadaLv2.png")
+    espada = pygame.transform.scale(espada, [tam3[0], tam3[1]])
+    espada = pygame.Surface.subsurface(espada, (0, 0, espada.get_width(), espada.get_height()))
     balas[5] = bala
-    balas[6] = bala
+    balas[6] = espada
     balas[7] = bala
     balas[8] = bala1
     balas[9] = bala
-    balas[10] = bala
+    espada = pygame.image.load("Juego/Mapa y gatos/EfectoEspadaLv3.png")
+    espada = pygame.transform.scale(espada, [tam3[0]*4, tam3[1]])
+    espada = pygame.Surface.subsurface(espada, (0, 0, espada.get_width(), espada.get_height()))
+    balas[10] = espada
     balas[11] = bala
     balas[12] = bala1
     return balas
