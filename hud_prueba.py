@@ -145,6 +145,21 @@ class Disparo(pygame.sprite.Sprite):
         a = tam["balas"]
         self.image = pygame.Surface.subsurface(balas[self.type], (a[0]*self.con, 0, a[0], a[1]))
 
+class DisparoEnemigo(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self)
+        a = tam["balas"]
+        self.image = pygame.Surface.subsurface(balas["jefe1"], (0, 0, a[0], a[1]))
+        self.rect = self.image.get_rect()
+        self.type = type
+        self.con = 0
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+        self.vel = 120
+
+    def update(self):
+        self.rect.x -= self.vel/tics
+
 class Rayo(pygame.sprite.Sprite):
     def __init__(self, pos, type):
         pygame.sprite.Sprite.__init__(self)
@@ -388,78 +403,115 @@ class Boss(pygame.sprite.Sprite):
         self.frames = 4
         self.action = 0
         self.con = 0
-        self.health = 500
+        self.health = 50
         self.damage = 1000
         self.mov_speed = 30
         self.atk = 0
         self.atk_speed = 1
         self.lag = 0
+        self.t = False
         self.punch = False
         self.dead = False
 
     def update(self):
-        #Caminar
         en_y = 0
-        if self.action == 0:
-            if self.lag <= 10:
-                self.lag += 1
-            else:
-                self.lag = 0
-                if self.con < self.frames-1:
-                    self.con += 1
-                else:
-                    self.con = 0
-            self.rect.x -= self.mov_speed/tics
-        #Parado
-        elif self.action == 1:
-            self.frames = 4
-            if self.lag <= 10:
-                self.lag += 1
-            else:
-                self.lag = 0
-                if self.con < self.frames-1:
-                    self.con += 1
-                else:
-                    self.con = 0
+        en_x = 0
+        if self.type == 1:
+            self.frames = 8
+            en_x = self.frames - (self.con + 1)
             en_y = 0
-            if self.atk < tics/self.atk_speed:
-                self.atk += 1
-            else:
-                self.action = 2
-                self.frames = 1
-                self.atk = 0
-                self.con = 0
-        #Atacando
-        elif self.action == 2:
-            self.frames = 5
-            if self.lag <= 10:
-                self.lag += 1
-            else:
-                self.lag = 0
-                if self.con <= self.frames-1:
-                    self.con += 1
+            #Caminar y disparar
+            if self.health > 0:
+                if self.lag <= 10:
+                    self.lag += 1
                 else:
-                    self.action = 1
+                    self.lag = 0
+                    if self.con < self.frames-1:
+                        self.con += 1
+                    else:
+                        self.con = 0
+                if self.atk < tics/self.atk_speed:
+                    self.atk += 1
+                else:
+                    self.atk = 0
+                    self.punch = True
+                if not self.t:
+                    self.rect.x -= self.mov_speed/tics
+            #Muriendo
+            else:
+                en_y = 1
+                if self.lag <= 10:
+                    self.lag += 1
+                else:
+                    self.lag = 0
+                    if self.con < self.frames - 1:
+                        self.con += 1
+                    else:
+                        self.con = 0
+                        self.dead = True
+        elif self.type == 2:
+            en_x = self.con
+            #Caminar
+            if self.action == 0:
+                if self.lag <= 10:
+                    self.lag += 1
+                else:
+                    self.lag = 0
+                    if self.con < self.frames-1:
+                        self.con += 1
+                    else:
+                        self.con = 0
+                self.rect.x -= self.mov_speed/tics
+            #Parado
+            elif self.action == 1:
+                self.frames = 4
+                if self.lag <= 10:
+                    self.lag += 1
+                else:
+                    self.lag = 0
+                    if self.con < self.frames-1:
+                        self.con += 1
+                    else:
+                        self.con = 0
+                en_y = 0
+                if self.atk < tics/self.atk_speed:
+                    self.atk += 1
+                else:
+                    self.action = 2
+                    self.frames = 1
                     self.atk = 0
                     self.con = 0
-                    self.punch = True
-            en_y = 1
-        #Muriendo
-        elif self.action == 3:
-            self.frames = 3
-            if self.lag <= 10:
-                self.lag += 1
-            else:
-                self.lag = 0
-                if self.con <= self.frames-1:
-                    self.con += 1
+            #Atacando
+            elif self.action == 2:
+                self.frames = 5
+                if self.lag <= 10:
+                    self.lag += 1
                 else:
-                    self.dead = True
-            en_y = 2
-        if self.health <= 0 and self.action != 3:
-            self.frames = 0
-            self.action = 3
-            self.con = 0
+                    self.lag = 0
+                    if self.con <= self.frames-1:
+                        self.con += 1
+                    else:
+                        self.action = 1
+                        self.atk = 0
+                        self.con = 0
+                        self.punch = True
+                en_y = 1
+            #Muriendo
+            elif self.action == 3:
+                self.frames = 3
+                if self.lag <= 10:
+                    self.lag += 1
+                else:
+                    self.lag = 0
+                    if self.con <= self.frames-1:
+                        self.con += 1
+                    else:
+                        self.dead = True
+                en_y = 2
+            if self.health <= 0 and self.action != 3:
+                self.frames = 0
+                self.action = 3
+                self.con = 0
         #Saltando
         #if self.action == 4:
 
@@ -515,9 +567,9 @@ class Pausa(pygame.sprite.Sprite):
         self.rect.center = [int(ancho/2), int(alto/2)]
 
 class Boton(pygame.sprite.Sprite):
-    def __init__(self, pos, image):
+    def __init__(self, pos, image, tama):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface([20,20])
+        self.image = pygame.Surface(tama)
         self.rect = self.image.get_rect()
         self.rect.x = pos[0]
         self.rect.y = pos[1]
@@ -564,6 +616,7 @@ def in_game(sc, lvl):
     bloques = pygame.sprite.Group()
     enemigos = pygame.sprite.Group()
     hud = pygame.sprite.Group()
+    disparo_enemigo = pygame.sprite.Group()
     disparos = pygame.sprite.Group()
     espadas = pygame.sprite.Group()
     rangos = pygame.sprite.Group()
@@ -575,7 +628,7 @@ def in_game(sc, lvl):
     todos.add(mapita)
     todos.add(ge)
 
-    botonpausa = Boton([0,0], arco)
+    botonpausa = Boton([0,0], arco, [20, 20])
     todos.add(botonpausa)
 
     g1 = Generador([20,30], 1)
@@ -617,8 +670,8 @@ def in_game(sc, lvl):
     pygame.mixer.music.play(-1)
     while not fin:
         #Gestion de eventos
-        while not (lose or win or exit or fin):
-            while not(pause or lose or win or exit or fin):
+        if not (lose or win or exit):
+            if not(pause):
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         fin=True
@@ -707,47 +760,53 @@ def in_game(sc, lvl):
                                     todos.remove(last)
                                     last = None
                 for t in torres:
-                    if t.lin != None:
-                        lin_ene = pygame.sprite.spritecollide(t.lin, enemigos, False)
-                        if len(lin_ene) > 0:
-                            t.perro = True
-                        else: t.perro = False
-                    elif t.type in [2, 6, 10]:
-                        t_col = pygame.sprite.spritecollide(t, enemigos, False)
-                        if len(t_col) > 0:
-                            t.perro = True
-                        else: t.perro = False
-                    elif t.type in [4, 8, 12]:
-                        r_col = pygame.sprite.spritecollide(t.range, enemigos, False)
-                        if len(r_col):
-                            t.perro = True
-                        else:
-                            t.perro = False
-                    if t.dis != None:
-                        #Genera el disparo
-                        disparos.add(t.dis)
-                        todos.add(t.dis)
-                        dis = pygame.mixer.Sound("C:/FFOutput/Gatolv1-2.wav")
-                        dis.play()
-                        t.dis = None
-                    if t.rayo != None:
-                        rayos.add(t.rayo)
-                        todos.add(t.rayo)
-                        t.rayo = None
-                    if t.coin != None:
-                        #Genera la moneda
-                        coins.add(t.coin)
-                        todos.add(t.coin)
-                        t.coin = None
-                    if t.sw != None:
-                        espadas.add(t.sw)
-                        todos.add(t.sw)
-                        t.sw = None
                     if t.dead:
                         #Verifica si la torre está muerta y desocupa el bloque
                         t.block.oc = False
                         todos.remove(t)
                         torres.remove(t)
+                    else:
+                        d_col = pygame.sprite.spritecollide(t, disparo_enemigo, False)
+                        for d in d_col:
+                            t.health -= 2
+                            todos.remove(d)
+                            disparo_enemigo.remove(d)
+                        if t.lin != None:
+                            lin_ene = pygame.sprite.spritecollide(t.lin, enemigos, False)
+                            if len(lin_ene) > 0:
+                                t.perro = True
+                            else: t.perro = False
+                        elif t.type in [2, 6, 10]:
+                            t_col = pygame.sprite.spritecollide(t, enemigos, False)
+                            if len(t_col) > 0:
+                                t.perro = True
+                            else: t.perro = False
+                        elif t.type in [4, 8, 12]:
+                            r_col = pygame.sprite.spritecollide(t.range, enemigos, False)
+                            if len(r_col):
+                                t.perro = True
+                            else:
+                                t.perro = False
+                        if t.dis != None:
+                            #Genera el disparo
+                            disparos.add(t.dis)
+                            todos.add(t.dis)
+                            dis = pygame.mixer.Sound("C:/FFOutput/Gatolv1-2.wav")
+                            dis.play()
+                            t.dis = None
+                        if t.rayo != None:
+                            rayos.add(t.rayo)
+                            todos.add(t.rayo)
+                            t.rayo = None
+                        if t.coin != None:
+                            #Genera la moneda
+                            coins.add(t.coin)
+                            todos.add(t.coin)
+                            t.coin = None
+                        if t.sw != None:
+                            espadas.add(t.sw)
+                            todos.add(t.sw)
+                            t.sw = None
                 if ge.gen != 0:
                     if ge.cant <= ge.tope:
                         #Genera un e, nemigo en una línea al azar
@@ -811,16 +870,25 @@ def in_game(sc, lvl):
                         ls_col2 = pygame.sprite.spritecollide(enemigo, rayos, False)
                         for r in ls_col2:
                             enemigo.health -= damage[r.type]
-
                         ls_col3 = pygame.sprite.spritecollide(enemigo, espadas, False)
                         for es in ls_col3:
-                            if es.con == 10:
+                            if es.con == 2:
                                 enemigo.health -= damage[es.type]
-
                         #Verifica las colisiones con las torres
                         ls_coli = pygame.sprite.spritecollide(enemigo, torres, False)
                         #If para prevenir  que se queden parados si matan al gato que estaban atacando
-                        if len(ls_coli) > 0:
+                        if isinstance(enemigo, Boss) and enemigo.type == 1:
+                            if enemigo.punch:
+                                dis = DisparoEnemigo([enemigo.rect.left, enemigo.rect.y])
+                                disparo_enemigo.add(dis)
+                                todos.add(dis)
+                                enemigo.punch = False
+                            col = pygame.sprite.spritecollide(enemigo, torres, False)
+                            if len(col) > 0:
+                                enemigo.t =  True
+                            else:
+                                enemigo.t = False
+                        elif len(ls_coli) > 0:
                             for t in ls_coli:
                                 if (not t.unlocked) and enemigo.action == 0:
                                     enemigo.action = 1
@@ -835,21 +903,22 @@ def in_game(sc, lvl):
                 todos.draw(sc)
                 pygame.display.flip()
                 reloj.tick(tics)
-            if pause:
+            else:
                 pygame.mixer.music.pause()
                 pausa = Pausa()
                 while not(exit) and pause:
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
-                            menu=True
+                            fin=True
                         if event.type == pygame.MOUSEBUTTONDOWN:
                             if pausa.rect.collidepoint(event.pos):
                                 pause = False
                                 pygame.mixer.music.unpause()
                             else:
                                 exit = True
-        fin = True
-        pygame.mixer.music.stop()
+        else:
+            fin = True
+            pygame.mixer.music.stop()
     if win:
         in_game(sc, 2)
     if lose:

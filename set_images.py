@@ -109,6 +109,10 @@ def set_balas(tam, tam2, tam3):
     balas[10] = espada
     balas[11] = bala
     balas[12] = bala1
+    bala = pygame.image.load("Juego/enemigos/DisparoMegaP.png")
+    bala = pygame.Surface.subsurface(bala, (41, 0, 84, bala.get_height()))
+    bala = pygame.transform.scale(bala, tam)
+    balas["jefe1"] = bala
     return balas
 
 def set_cartas(tam):
@@ -165,8 +169,8 @@ def set_mapas(factor):
 
 def set_boss(tam):
     jefes = dict()
-    jefe = pygame.image.load("Juego/enemigos/Boss2.png")
-    jefe = pygame.transform.scale(jefe, [tam[0]*6, tam[1]*3])
+    jefe = pygame.image.load("Juego/enemigos/Boss1.png")
+    jefe = pygame.transform.scale(jefe, [tam[0]*8, tam[1]*2])
     jefes[1] = jefe
     jefe = pygame.image.load("Juego/enemigos/Boss2.png")
     jefe = pygame.transform.scale(jefe, [tam[0]*6, tam[1]*3])
