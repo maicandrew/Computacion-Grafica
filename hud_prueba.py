@@ -19,7 +19,7 @@ tam = {
 "generador" : [75, 100],
 "cartas" : [200, 270],
 "balas" : [40, 36],
-"enemigos" : [75, 55],
+"enemigos" : [75, 75],
 "moneda" : [25, 25],
 "arco" : [50, 50],
 "rayo" : [313, 56],
@@ -288,7 +288,7 @@ class Enemigo(pygame.sprite.Sprite):
             self.rect.x -= self.mov_speed/tics
         #Parado
         elif self.action == 1:
-            self.frames = 6
+            self.frames = 4
             if self.lag <= 10:
                 self.lag += 1
             else:
@@ -297,7 +297,7 @@ class Enemigo(pygame.sprite.Sprite):
                     self.con += 1
                 else:
                     self.con = 0
-            en_y = 2
+            en_y = 3
             if self.atk < tics/self.atk_speed:
                 self.atk += 1
             else:
@@ -319,7 +319,7 @@ class Enemigo(pygame.sprite.Sprite):
                     self.atk = 0
                     self.con = 0
                     self.punch = True
-            en_y = 2
+            en_y = 1
         #Muriendo
         elif self.action == 3:
             self.frames = 4
@@ -331,7 +331,7 @@ class Enemigo(pygame.sprite.Sprite):
                     self.con += 1
                 else:
                     self.dead = True
-            en_y = 5
+            en_y = 2
         if self.health <= 0 and self.action != 3:
             self.frames = 0
             self.action = 3
@@ -353,7 +353,7 @@ class Boss(pygame.sprite.Sprite):
         self.con = 0
         self.health = 500
         self.damage = 1000
-        self.mov_speed = 60
+        self.mov_speed = 30
         self.atk = 0
         self.atk_speed = 1
         self.lag = 0
@@ -471,6 +471,19 @@ class Texto(pygame.sprite.Sprite):
         self.rect.x = pos[0]
         self.rect.y = pos[1]
 
+class Pausa(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface([500,300])
+        self.rect = self.image.get_rect()
+        self.rect.center = [int(ancho/2), int(alto/2)]
+
+class BotonPausa(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface([20,20])
+        self.rect = self.image.get_rect()
+
 class Generador (pygame.sprite.Sprite):
     def __init__(self, pos, type):
         pygame.sprite.Sprite.__init__(self)
@@ -522,6 +535,9 @@ def in_game(sc, lvl):
     todos.add(mapita)
     todos.add(ge)
 
+    botonpausa = BotonPausa()
+    todos.add(botonpausa)
+
     g1 = Generador([20,30], 1)
     g2 = Generador([20,150], 2)
     g3 = Generador([20,270], 3)
@@ -551,6 +567,7 @@ def in_game(sc, lvl):
     lose = False
     win = False
     exit = False
+    pause = False
     card = None
     bow = None
     total_coins = 100
@@ -561,194 +578,209 @@ def in_game(sc, lvl):
     while not fin:
         #Gestion de eventos
         while not (lose or win or exit or fin):
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    fin=True
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if bow != None:
-                        if bow.rect.collidepoint(event.pos) and bow.gato.type <= 8:
-                            if total_coins >= costos[bow.gato.type+4]:
-                                bow.gato.upgrade()
-                                total_coins -= costos[bow.gato.type]
+            while not(pause or lose or win or exit or fin):
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        fin=True
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if bow != None:
+                            if bow.rect.collidepoint(event.pos) and bow.gato.type <= 8:
+                                if total_coins >= costos[bow.gato.type+4]:
+                                    bow.gato.upgrade()
+                                    total_coins -= costos[bow.gato.type]
+                                    print(total_coins)
+                                else:
+                                    print("Monedas insuficientes")
+                            todos.remove(bow)
+                            bow = None
+                        if botonpausa.rect.collidepoint(event.pos):
+                            pause = True
+                        if card != None:
+                            todos.remove(card)
+                            card = None
+                        for g in hud:
+                            #Verifica qué generador quiere usar
+                            if g.rect.collidepoint(event.pos):
+                                if total_coins >= costos[g.type]:
+                                    mp = event.pos
+                                    m8 = Torre(g.type, event.pos)
+                                    last = m8
+                                    torres.add(m8)
+                                    todos.add(m8)
+                        for b in torres:
+                            if b.rect.collidepoint(event.pos):
+                                #Hace que la torre siga el mouse
+                                if b.unlocked:
+                                    b.click = True
+                                    last = b
+                                    break
+                                else:
+                                    #Muestra la carta de stats
+                                    card = Carta([b.rect.right, b.rect.y], b.type)
+                                    bow = Arco([b.rect.right+tam["cartas"][0], b.rect.y], b)
+                                    todos.add(bow)
+                                    todos.add(card)
+                        for c in coins:
+                            #verifica si la moneda lleva mucho tiempo y desaparece
+                            if c.des:
+                                coins.remove(c)
+                                todos.remove(c)
+                            #Verifica si se da click en la moneda para recolectarla
+                            if c.rect.collidepoint(event.pos):
+                                total_coins += 5
                                 print(total_coins)
-                            else:
-                                print("Monedas insuficientes")
-                        todos.remove(bow)
-                        bow = None
-                    if card != None:
-                        todos.remove(card)
-                        card = None
-                    for g in hud:
-                        #Verifica qué generador quiere usar
-                        if g.rect.collidepoint(event.pos):
-                            if total_coins >= costos[g.type]:
-                                mp = event.pos
-                                m8 = Torre(g.type, event.pos)
-                                last = m8
-                                torres.add(m8)
-                                todos.add(m8)
-                    for b in torres:
-                        if b.rect.collidepoint(event.pos):
-                            #Hace que la torre siga el mouse
-                            if b.unlocked:
-                                b.click = True
-                                last = b
+                                coins.remove(c)
+                                todos.remove(c)
                                 break
-                            else:
-                                #Muestra la carta de stats
-                                card = Carta([b.rect.right, b.rect.y], b.type)
-                                bow = Arco([b.rect.right+tam["cartas"][0], b.rect.y], b)
-                                todos.add(bow)
-                                todos.add(card)
-                    for c in coins:
-                        #verifica si la moneda lleva mucho tiempo y desaparece
-                        if c.des:
-                            coins.remove(c)
-                            todos.remove(c)
-                        #Verifica si se da click en la moneda para recolectarla
-                        if c.rect.collidepoint(event.pos):
-                            total_coins += 5
-                            print(total_coins)
-                            coins.remove(c)
-                            todos.remove(c)
-                            break
 
-                if event.type == pygame.MOUSEBUTTONUP:
-                    if event.pos == mp or not colocar(event.pos):
-                        #Si la torre está fuera de lugar, desaparece
-                        todos.remove(last)
-                        torres.remove(last)
-                        last = None
-                    for t in torres:
-                        #Suelta la torre
-                        if t.rect.collidepoint(event.pos):
-                            t.click = False
+                    if event.type == pygame.MOUSEBUTTONUP:
+                        if event.pos == mp or not colocar(event.pos):
+                            #Si la torre está fuera de lugar, desaparece
+                            todos.remove(last)
+                            torres.remove(last)
+                            last = None
+                        for t in torres:
+                            #Suelta la torre
+                            if t.rect.collidepoint(event.pos):
+                                t.click = False
 
-                    for b in bloques:
-                        if b.rect.collidepoint(event.pos) and last != None:
-                            if not b.oc:
-                                #Si el bloque no está ocupado, pone la torre
-                                last.rect.center = b.rect.center
-                                last.unlocked = False
-                                last.block = b
-                                b.oc = True
-                                total_coins -= costos[last.type]
-                                print(total_coins)
-                                last = None
-                            else:
-                                #Si el bloque está ocupado, desaparece la torre que iba a poner
-                                todos.remove(last)
-                                torres.remove(last)
-                                last = None
-            for t in torres:
-                if t.dis != None:
-                    #Genera el disparo
-                    disparos.add(t.dis)
-                    todos.add(t.dis)
-                    dis = pygame.mixer.Sound("C:/FFOutput/Gatolv1-2.wav")
-                    dis.play()
-                    t.dis = None
-                if t.rayo != None:
-                    rayos.add(t.rayo)
-                    todos.add(t.rayo)
-                    t.rayo = None
-                if t.coin != None:
-                    #Genera la moneda
-                    coins.add(t.coin)
-                    todos.add(t.coin)
-                    t.coin = None
-                if t.dead:
-                    #Verifica si la torre está muerta y desocupa el bloque
-                    t.block.oc = False
-                    todos.remove(t)
-                    torres.remove(t)
-            if ge.gen != 0:
-                if ge.cant <= ge.tope:
-                    #Genera un enemigo en una línea al azar
-                    en = Enemigo([915,80+(random.randint(0,4)*tam["bloque"][1])], 1)
-                    enemigos.add(en)
-                    todos.add(en)
-                    en = None
-                    ge.gen = 0
-                else:
-                    if len(enemigos.sprites()) == 0:
-                        if not ge.boss:
-                            boss = Boss([915,80], 1)
-                            enemigos.add(boss)
-                            todos.add(boss)
-                            print("Sale el boss")
-                            ge.boss = True
-                        else:
-                            print("Gana")
-                            win = True
-
-            todos.remove(text)
-            text = Texto([0,0], str(total_coins))
-            todos.add(text)
-
-            for d in disparos:
-                #elimina el disparo si pasó el limite de la pantalla
-                if d.rect.x >= ancho:
-                    disparos.remove(d)
-                    todos.remove(d)
-
-            for r in rayos:
-                if r.con >= 9:
-                    rayos.remove(r)
-                    todos.remove(r)
-
-            for l in lineas:
-                lin_ene = pygame.sprite.spritecollide(l, enemigos, False)
-                if len(lin_ene) > 0:
-                    l.en = True
-                else: l.en = False
-                lin_ali = pygame.sprite.spritecollide(l, torres, False)
-                for t in lin_ali:
-                    t.lin = l
-                    if l.en:
-                        t.perro = True
+                        for b in bloques:
+                            if b.rect.collidepoint(event.pos) and last != None:
+                                if not b.oc:
+                                    #Si el bloque no está ocupado, pone la torre
+                                    last.rect.center = b.rect.center
+                                    last.unlocked = False
+                                    last.block = b
+                                    b.oc = True
+                                    total_coins -= costos[last.type]
+                                    print(total_coins)
+                                    last = None
+                                else:
+                                    #Si el bloque está ocupado, desaparece la torre que iba a poner
+                                    todos.remove(last)
+                                    torres.remove(last)
+                                    last = None
+                for t in torres:
+                    if t.dis != None:
+                        #Genera el disparo
+                        disparos.add(t.dis)
+                        todos.add(t.dis)
+                        dis = pygame.mixer.Sound("C:/FFOutput/Gatolv1-2.wav")
+                        dis.play()
+                        t.dis = None
+                    if t.rayo != None:
+                        rayos.add(t.rayo)
+                        todos.add(t.rayo)
+                        t.rayo = None
+                    if t.coin != None:
+                        #Genera la moneda
+                        coins.add(t.coin)
+                        todos.add(t.coin)
+                        t.coin = None
+                    if t.dead:
+                        #Verifica si la torre está muerta y desocupa el bloque
+                        t.block.oc = False
+                        todos.remove(t)
+                        torres.remove(t)
+                if ge.gen != 0:
+                    if ge.cant <= ge.tope:
+                        #Genera un enemigo en una línea al azar
+                        en = Enemigo([915,80+(random.randint(0,4)*tam["bloque"][1])], 1)
+                        enemigos.add(en)
+                        todos.add(en)
+                        en = None
+                        ge.gen = 0
                     else:
-                        t.perro = False
+                        if len(enemigos.sprites()) == 0:
+                            if not ge.boss:
+                                boss = Boss([915,80], 1)
+                                enemigos.add(boss)
+                                todos.add(boss)
+                                print("Sale el boss")
+                                ge.boss = True
+                            else:
+                                print("Gana")
+                                win = True
 
-            for enemigo in enemigos:
-                if enemigo.rect.x <= legal[0]:
-                    #Pierde si un enemigo llega a la zona izquierda del jardín
-                    lose = True
-                    print("Pierde")
-                if enemigo.dead:
-                    #Borra al enemigo si está muerto
-                    todos.remove(enemigo)
-                    enemigos.remove(enemigo)
-                else:
-                    #Verifica las colisiones con los disparos
-                    ls_col = pygame.sprite.spritecollide(enemigo, disparos, False)
-                    for d in ls_col:
-                        enemigo.health -= damage[d.type]
-                        todos.remove(d)
+                todos.remove(text)
+                text = Texto([0,0], str(total_coins))
+                todos.add(text)
+
+                for d in disparos:
+                    #elimina el disparo si pasó el limite de la pantalla
+                    if d.rect.x >= ancho:
                         disparos.remove(d)
-                    #Verifica las colisiones con los disparos
-                    ls_col2 = pygame.sprite.spritecollide(enemigo, rayos, False)
-                    for d in ls_col2:
-                        enemigo.health -= damage[d.type]
+                        todos.remove(d)
 
-                    #Verifica las colisiones con las torres
-                    ls_coli = pygame.sprite.spritecollide(enemigo, torres, False)
-                    #If para prevenir  que se queden parados si matan al gato que estaban atacando
-                    if len(ls_coli) > 0:
-                        for t in ls_coli:
-                            if (not t.unlocked) and enemigo.action == 0:
-                                enemigo.action = 1
-                            if enemigo.punch:
-                                t.health -= enemigo.damage
-                                enemigo.punch = False
-                            break
-                    elif enemigo.action != 3:
-                        enemigo.action = 0
+                for r in rayos:
+                    if r.con >= 9:
+                        rayos.remove(r)
+                        todos.remove(r)
 
-            todos.update()
-            todos.draw(sc)
-            pygame.display.flip()
-            reloj.tick(tics)
+                for l in lineas:
+                    lin_ene = pygame.sprite.spritecollide(l, enemigos, False)
+                    if len(lin_ene) > 0:
+                        l.en = True
+                    else: l.en = False
+                    lin_ali = pygame.sprite.spritecollide(l, torres, False)
+                    for t in lin_ali:
+                        t.lin = l
+                        if l.en:
+                            t.perro = True
+                        else:
+                            t.perro = False
+
+                for enemigo in enemigos:
+                    if enemigo.rect.x <= legal[0]:
+                        #Pierde si un enemigo llega a la zona izquierda del jardín
+                        lose = True
+                        print("Pierde")
+                    if enemigo.dead:
+                        #Borra al enemigo si está muerto
+                        todos.remove(enemigo)
+                        enemigos.remove(enemigo)
+                    else:
+                        #Verifica las colisiones con los disparos
+                        ls_col = pygame.sprite.spritecollide(enemigo, disparos, False)
+                        for d in ls_col:
+                            enemigo.health -= damage[d.type]
+                            todos.remove(d)
+                            disparos.remove(d)
+                        #Verifica las colisiones con los disparos
+                        ls_col2 = pygame.sprite.spritecollide(enemigo, rayos, False)
+                        for d in ls_col2:
+                            enemigo.health -= damage[d.type]
+
+                        #Verifica las colisiones con las torres
+                        ls_coli = pygame.sprite.spritecollide(enemigo, torres, False)
+                        #If para prevenir  que se queden parados si matan al gato que estaban atacando
+                        if len(ls_coli) > 0:
+                            for t in ls_coli:
+                                if (not t.unlocked) and enemigo.action == 0:
+                                    enemigo.action = 1
+                                if enemigo.punch:
+                                    t.health -= enemigo.damage
+                                    enemigo.punch = False
+                                break
+                        elif enemigo.action != 3:
+                            enemigo.action = 0
+
+                todos.update()
+                todos.draw(sc)
+                pygame.display.flip()
+                reloj.tick(tics)
+            if pause:
+                pygame.mixer.music.pause()
+                pausa = Pausa()
+                while not(exit) and pause:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            menu=True
+                        if event.type == pygame.MOUSEBUTTONDOWN:
+                            if pausa.rect.collidepoint(event.pos):
+                                pause = False
+                            else:
+                                exit = True
         fin = True
         pygame.mixer.music.stop()
     if win:
@@ -768,7 +800,6 @@ def Menu():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 menu = True
                 in_game(pantalla, 1)
-
 
 if __name__ == '__main__':
     Menu()

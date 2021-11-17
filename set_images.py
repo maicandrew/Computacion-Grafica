@@ -42,9 +42,8 @@ def set_gatos(tam):
 
 def set_perros(tam):
     perros = dict()
-    perro = pygame.image.load("Juego/enemigos/Enemigo2.png")
-    perro = pygame.Surface.subsurface(perro, (0,0,935, perro.get_height()))
-    perro = pygame.transform.scale(perro,[tam[0]*11, tam[1]*8])
+    perro = pygame.image.load("Juego/enemigos/Enemigo2.1.png")
+    perro = pygame.transform.scale(perro,[tam[0]*11, tam[1]*4])
     perros[1] = perro
     '''perro = pygame.image.load("Juego/Mapa y perros/perro2lv1.png")
     perro = pygame.transform.scale(perro,tam)

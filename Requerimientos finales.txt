@@ -1,0 +1,14 @@
+6 Oleadas
+Pesos por oleadas
+Primer boss
+Salto del segundo boss
+Soltar una moneda por enemigo
+Efectos de sonido
+Videos
+Sprites - On going
+Menu
+Sonido de explosion
+Boton de quitar gatos
+Quitar gatos
+Botón de pausa - Done
+Miau of legends - Done
