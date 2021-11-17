@@ -62,6 +62,7 @@ cartas = set_cartas(tam["cartas"])
 balas = set_balas(tam["balas"], tam["rayo"])
 gatos = set_gatos(tam["gato"])
 perros = set_perros(tam["enemigos"])
+bosses = set_boss(tam["enemigos"])
 arco = pygame.image.load("Juego/Cartas y mejoras/arco.png")
 arco = pygame.transform.scale(arco, tam["arco"])
 ancho = tam["mapa"][0]
@@ -125,7 +126,6 @@ class Disparo(pygame.sprite.Sprite):
         a = tam["balas"]
         self.image = pygame.Surface.subsurface(balas[type], (0, 0, a[0], a[1]))
         self.rect = self.image.get_rect()
-        self.damage = 25
         self.type = type
         self.con = 0
         self.rect.x = pos[0]
@@ -151,7 +151,6 @@ class Rayo(pygame.sprite.Sprite):
         self.rect.y = pos[1]
         self.type = type
         self.con = 0
-        self.damage = damage[type]
 
     def update(self):
         if self.con < 9:
@@ -252,9 +251,9 @@ class Enemigo(pygame.sprite.Sprite):
         self.rect.x = pos[0]
         self.rect.y = pos[1]
         self.type = type
-        self.frames = 3
+        self.frames = 11
         self.action = 0
-        self.health = 15
+        self.health = 50
         self.frame = 2
         self.damage = 25
         self.atk_speed = 1
@@ -273,18 +272,19 @@ class Enemigo(pygame.sprite.Sprite):
                 self.lag += 1
             else:
                 self.lag = 0
-                if self.con < self.frames:
+                if self.con < self.frames-1:
                     self.con += 1
                 else:
                     self.con = 0
             self.rect.x -= self.mov_speed/tics
         #Parado
         elif self.action == 1:
+            self.frames = 6
             if self.lag <= 10:
                 self.lag += 1
             else:
                 self.lag = 0
-                if self.con < self.frames:
+                if self.con < self.frames-1:
                     self.con += 1
                 else:
                     self.con = 0
@@ -298,11 +298,12 @@ class Enemigo(pygame.sprite.Sprite):
                 self.con = 0
         #Atacando
         elif self.action == 2:
+            self.frames = 6
             if self.lag <= 10:
                 self.lag += 1
             else:
                 self.lag = 0
-                if self.con <= self.frames:
+                if self.con <= self.frames-1:
                     self.con += 1
                 else:
                     self.action = 1
@@ -312,11 +313,12 @@ class Enemigo(pygame.sprite.Sprite):
             en_y = 2
         #Muriendo
         elif self.action == 3:
+            self.frames = 4
             if self.lag <= 10:
                 self.lag += 1
             else:
                 self.lag = 0
-                if self.con <= self.frames:
+                if self.con <= self.frames-1:
                     self.con += 1
                 else:
                     self.dead = True
@@ -327,6 +329,93 @@ class Enemigo(pygame.sprite.Sprite):
             self.con = 0
         a = tam["enemigos"]
         self.image = pygame.Surface.subsurface(perros[self.type], (a[0]*self.con, en_y*a[1], a[0], a[1]))
+
+class Boss(pygame.sprite.Sprite):
+    def __init__(self, pos, type):
+        pygame.sprite.Sprite.__init__(self)
+        a = tam["enemigos"]
+        self.image = pygame.Surface.subsurface(bosses[type], (0,0,a[0],a[1]))
+        self.type = type
+        self.rect = self.image.get_rect()
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+        self.frames = 4
+        self.action = 0
+        self.con = 0
+        self.health = 500
+        self.damage = 1000
+        self.mov_speed = 480
+        self.atk = 0
+        self.atk_speed = 1
+        self.lag = 0
+        self.punch = False
+        self.dead = False
+
+    def update(self):
+        #Caminar
+        en_y = 0
+        if self.action == 0:
+            if self.lag <= 10:
+                self.lag += 1
+            else:
+                self.lag = 0
+                if self.con < self.frames-1:
+                    self.con += 1
+                else:
+                    self.con = 0
+            self.rect.x -= self.mov_speed/tics
+        #Parado
+        elif self.action == 1:
+            self.frames = 4
+            if self.lag <= 10:
+                self.lag += 1
+            else:
+                self.lag = 0
+                if self.con < self.frames-1:
+                    self.con += 1
+                else:
+                    self.con = 0
+            en_y = 0
+            if self.atk < tics/self.atk_speed:
+                self.atk += 1
+            else:
+                self.action = 2
+                self.frames = 1
+                self.atk = 0
+                self.con = 0
+        #Atacando
+        elif self.action == 2:
+            self.frames = 5
+            if self.lag <= 10:
+                self.lag += 1
+            else:
+                self.lag = 0
+                if self.con <= self.frames-1:
+                    self.con += 1
+                else:
+                    self.action = 1
+                    self.atk = 0
+                    self.con = 0
+                    self.punch = True
+            en_y = 1
+        #Muriendo
+        elif self.action == 3:
+            self.frames = 3
+            if self.lag <= 10:
+                self.lag += 1
+            else:
+                self.lag = 0
+                if self.con <= self.frames-1:
+                    self.con += 1
+                else:
+                    self.dead = True
+            en_y = 2
+        if self.health <= 0 and self.action != 3:
+            self.frames = 0
+            self.action = 3
+            self.con = 0
+        a = tam["enemigos"]
+        self.image = pygame.Surface.subsurface(bosses[self.type], (a[0]*self.con, en_y*a[1], a[0], a[1]))
 
 class Carta(pygame.sprite.Sprite):
     def __init__(self, pos, type):
@@ -341,8 +430,6 @@ def colocar(pos):
     if legal[0] <= pos[0] <= legal[2] and legal[1] <= pos[1] <= legal[3]:
         return True
     else: return False
-
-
 
 class Bloque(pygame.sprite.Sprite):
     def __init__(self, pos):
@@ -382,8 +469,9 @@ class GeneradorEnemigo (pygame.sprite.Sprite):
         self.cd = 0
         self.con = 0
         self.cant = 0
-        self.tope = 3
+        self.tope = 1
         self.gen = 0
+        self.boss = False
 
     def update(self):
         if self.con <= self.cd*tics:
@@ -550,12 +638,24 @@ def in_game(sc, lvl):
                     todos.remove(t)
                     torres.remove(t)
             if ge.gen != 0:
-                #Genera un enemigo en una línea al azar
-                en = Enemigo([915,80+(random.randint(0,4)*tam["bloque"][1])], 1)
-                enemigos.add(en)
-                todos.add(en)
-                en = None
-                ge.gen = 0
+                if ge.cant <= ge.tope:
+                    #Genera un enemigo en una línea al azar
+                    en = Enemigo([915,80+(random.randint(0,4)*tam["bloque"][1])], 1)
+                    enemigos.add(en)
+                    todos.add(en)
+                    en = None
+                    ge.gen = 0
+                else:
+                    if len(enemigos.sprites()) == 0:
+                        if not ge.boss:
+                            boss = Boss([915,80], 1)
+                            enemigos.add(boss)
+                            todos.add(boss)
+                            print("Sale el boss")
+                            ge.boss = True
+                        else:
+                            print("Gana")
+                            win = True
 
             todos.remove(text)
             text = Texto([0,0], str(total_coins))
@@ -585,13 +685,13 @@ def in_game(sc, lvl):
                     #Verifica las colisiones con los disparos
                     ls_col = pygame.sprite.spritecollide(enemigo, disparos, False)
                     for d in ls_col:
-                        enemigo.health -= d.damage
+                        enemigo.health -= damage[d.type]
                         todos.remove(d)
                         disparos.remove(d)
                     #Verifica las colisiones con los disparos
                     ls_col2 = pygame.sprite.spritecollide(enemigo, rayos, False)
                     for d in ls_col2:
-                        enemigo.health -= d.damage
+                        enemigo.health -= damage[d.type]
 
                     #Verifica las colisiones con las torres
                     ls_coli = pygame.sprite.spritecollide(enemigo, torres, False)
@@ -606,17 +706,13 @@ def in_game(sc, lvl):
                             break
                     elif enemigo.action != 3:
                         enemigo.action = 0
-            #Condición de victoria cutre
-            if ge.cant > ge.tope:
-                if len(enemigos.sprites()) == 0:
-                    win = True
-                    print("Gana")
 
             todos.update()
             todos.draw(sc)
             pygame.display.flip()
             reloj.tick(tics)
         fin = True
+        pygame.mixer.music.stop()
     if win:
         in_game(sc, 2)
     if lose:
@@ -630,10 +726,11 @@ def Menu():
     while not menu:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                fin=True
+                menu=True
             if event.type == pygame.MOUSEBUTTONDOWN:
                 menu = True
-    in_game(pantalla, 1)
+                in_game(pantalla, 1)
+
 
 if __name__ == '__main__':
     Menu()

@@ -43,7 +43,8 @@ def set_gatos(tam):
 def set_perros(tam):
     perros = dict()
     perro = pygame.image.load("Juego/enemigos/Enemigo2.png")
-    perro = pygame.transform.scale(perro,[tam[0]*12, tam[1]*8])
+    perro = pygame.Surface.subsurface(perro, (0,0,935, perro.get_height()))
+    perro = pygame.transform.scale(perro,[tam[0]*11, tam[1]*8])
     perros[1] = perro
     '''perro = pygame.image.load("Juego/Mapa y perros/perro2lv1.png")
     perro = pygame.transform.scale(perro,tam)
@@ -153,3 +154,13 @@ def set_mapas(factor):
     mapa.append(mapita)
     mapas[1] = mapa
     return mapas
+
+def set_boss(tam):
+    jefes = dict()
+    jefe = pygame.image.load("Juego/enemigos/Boss2.png")
+    jefe = pygame.transform.scale(jefe, [tam[0]*6, tam[1]*3])
+    jefes[1] = jefe
+    jefe = pygame.image.load("Juego/enemigos/Boss2.png")
+    jefe = pygame.transform.scale(jefe, [tam[0]*6, tam[1]*3])
+    jefes[2] = jefe
+    return jefes
