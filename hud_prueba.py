@@ -18,14 +18,11 @@ tam = {
 "enemigos" : [75, 55],
 "moneda" : [25, 25]
 }
-mapas = dict()
 legal = [240,80, 915,530]
-map = pygame.image.load("Mapa1.1.png")
-tam["mapa"] = [int(map.get_width()*fact), int(map.get_height()*fact)]
-map = pygame.transform.scale(map,tam["mapa"])
-mapas[1] = map
+mapas = set_mapas(fact)
+tam["mapa"] = [int(mapas[1][0].get_width()), int(mapas[1][0].get_height())]
 moneda = pygame.image.load("Juego/Mapa y gatos/Moneda.png")
-moneda = pygame.transform.scale(moneda, [tam["moneda"][0]*9, tam["moneda"][1]])
+moneda = pygame.transform.scale(moneda, [tam["moneda"][0], tam["moneda"][1]])
 costos = dict()
 costos = {
 1 : 5,
@@ -36,14 +33,14 @@ costos = {
 balas = set_balas(tam["balas"])
 gatos = set_gatos(tam["gato"])
 perros = set_perros(tam["enemigos"])
-ancho = int(map.get_width()/2)
-alto = int(map.get_height())
+ancho = tam["mapa"][0]
+alto = tam["mapa"][1]
 
 class mapa(pygame.sprite.Sprite):
-    def __init__(self,image, bit = 29):
+    def __init__(self, lvl, bit = 29):
         pygame.sprite.Sprite.__init__(self)
         a = tam["mapa"]
-        self.image = pygame.Surface.subsurface(image, (0,0,a[0]/2, a[1]))
+        self.image = pygame.Surface.subsurface(mapas[lvl][0], (0,0,a[0], a[1]))
         self.con = 0
         self.frame = 0
         self.bit = bit
@@ -55,7 +52,8 @@ class mapa(pygame.sprite.Sprite):
         else:
             self.frame = (self.frame + 1) % 2
             self.con = 0
-        self.image = pygame.Surface.subsurface(mapas[nivel], (ancho*self.frame, 0, ancho, alto))
+        a = tam["mapa"]
+        self.image = pygame.Surface.subsurface(mapas[nivel][self.frame], (0, 0, a[0], a[1]))
 
 class Coin(pygame.sprite.Sprite):
     def __init__(self, pos):
@@ -64,22 +62,16 @@ class Coin(pygame.sprite.Sprite):
         self.image = pygame.Surface.subsurface(moneda, (0,0,a[0], a[1]))
         self.rect = self.image.get_rect()
         self.con = 0
-        self.lag = 0
+        self.dur = 15
         self.frames = 9
         self.rect.x = pos[0]
         self.rect.y = pos[1]
 
     def update(self):
-        if self.lag <= 10:
-            self.lag += 1
-        else:
-            self.lag = 0
-            if self.con < self.frames-1:
-                self.con += 1
-            else:
-                self.con = 0
+        if self.con <= self.dur*tics:
+            self.con += 1
         a = tam["moneda"]
-        self.image = pygame.Surface.subsurface(moneda, (self.con*a[0], 0, a[0], a[1]))
+        self.image = pygame.Surface.subsurface(moneda, (0, 0, a[0], a[1]))
 
 class Disparo(pygame.sprite.Sprite):
     def __init__(self, pos, type):
@@ -310,7 +302,7 @@ if __name__ == '__main__':
     hud = pygame.sprite.Group()
     disparos = pygame.sprite.Group()
     coins = pygame.sprite.Group()
-    mapita = mapa(map)
+    mapita = mapa(1)
     ge = GeneradorEnemigo()
     todos.add(mapita)
     todos.add(ge)

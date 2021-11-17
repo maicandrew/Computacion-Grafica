@@ -90,3 +90,15 @@ def set_balas(tam):
     balas[3] = bala
     balas[4] = bala
     return balas
+
+def set_mapas(factor):
+    mapas = dict()
+    mapa = []
+    mapita = pygame.image.load("Juego/Mapa y gatos/Mapa1.1.jpg")
+    mapita = pygame.transform.scale(mapita, [int(mapita.get_width()*factor), int(mapita.get_height()*factor)])
+    mapa.append(mapita)
+    mapita = pygame.image.load("Juego/Mapa y gatos/Mapa1.2.jpg")
+    mapita = pygame.transform.scale(mapita, [int(mapita.get_width()*factor), int(mapita.get_height()*factor)])
+    mapa.append(mapita)
+    mapas[1] = mapa
+    return mapas
