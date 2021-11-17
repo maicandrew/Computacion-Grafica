@@ -43,7 +43,7 @@ def set_gatos(tam):
 def set_perros(tam):
     perros = dict()
     perro = pygame.image.load("Juego/enemigos/Enemigo2.png")
-    perro = pygame.transform.scale(perro,[tam[0]*4, tam[1]*3])
+    perro = pygame.transform.scale(perro,[tam[0]*12, tam[1]*8])
     perros[1] = perro
     '''perro = pygame.image.load("Juego/Mapa y perros/perro2lv1.png")
     perro = pygame.transform.scale(perro,tam)
@@ -80,7 +80,7 @@ def set_perros(tam):
     perros[12] = perro'''
     return perros
 
-def set_balas(tam):
+def set_balas(tam, tam2):
     balas = dict()
     bala = pygame.image.load("Juego/Mapa y gatos/disparos.png")
     bala = pygame.transform.scale(bala, [tam[0]*4, tam[1]*4])
@@ -88,7 +88,18 @@ def set_balas(tam):
     balas[1] = bala
     balas[2] = bala
     balas[3] = bala
-    balas[4] = bala
+    bala1 = pygame.image.load("Juego/Mapa y gatos/Hechisolv2-3.png")
+    bala1 = pygame.transform.scale(bala1, [tam2[0]*2, tam2[1]*10])
+    bala1 = pygame.Surface.subsurface(bala1, (0, 0, bala1.get_width(), bala1.get_height()))
+    balas[4] = bala1
+    balas[5] = bala
+    balas[6] = bala
+    balas[7] = bala
+    balas[8] = bala1
+    balas[9] = bala
+    balas[10] = bala
+    balas[11] = bala
+    balas[12] = bala1
     return balas
 
 def set_cartas(tam):

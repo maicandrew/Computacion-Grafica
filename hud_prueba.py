@@ -2,6 +2,7 @@ import random
 import pygame
 from set_images import *
 #Inicia setting de variables globales
+pygame.init()
 fact = 1300/1400
 tics = 60
 NEGRO = [0, 0, 0]
@@ -12,13 +13,15 @@ nivel = 1
 tam = dict()
 #Diccionario de tamaños
 tam = {
-"bloque" : [75,90],
-"gato" : [150,55],
-"generador" : [75,100],
+"bloque" : [75, 90],
+"gato" : [150, 55],
+"generador" : [75, 100],
 "cartas" : [200, 270],
-"balas" : [40,36],
+"balas" : [40, 36],
 "enemigos" : [75, 55],
-"moneda" : [25, 25]
+"moneda" : [25, 25],
+"arco" : [50, 50],
+"rayo" : [313, 56]
 }
 legal = [240,80, 915,530]
 mapas = set_mapas(fact)
@@ -31,11 +34,36 @@ costos = {
 2 : 15,
 3 : 10,
 4 : 15,
+5: 15,
+6: 15,
+7 : 15,
+8 : 20,
+9 : 30,
+10 : 25,
+11 : 20,
+12 : 40
+}
+damage = dict()
+damage = {
+1 : 0,
+2 : 1,
+3 : 3,
+4 : 2,
+5 : 0,
+6 : 2,
+7 : 3,
+8 : 3,
+9 : 0,
+10 : 3,
+11 : 4,
+12 : 6,
 }
 cartas = set_cartas(tam["cartas"])
-balas = set_balas(tam["balas"])
+balas = set_balas(tam["balas"], tam["rayo"])
 gatos = set_gatos(tam["gato"])
 perros = set_perros(tam["enemigos"])
+arco = pygame.image.load("Juego/Cartas y mejoras/arco.png")
+arco = pygame.transform.scale(arco, tam["arco"])
 ancho = tam["mapa"][0]
 alto = tam["mapa"][1]
 #Termina setting de variables globales
@@ -47,6 +75,7 @@ class mapa(pygame.sprite.Sprite):
         self.image = pygame.Surface.subsurface(mapas[lvl][0], (0,0,a[0], a[1]))
         self.con = 0
         self.frame = 0
+        self.lvl = lvl
         self.bit = bit
         self.rect = self.image.get_rect()
 
@@ -57,7 +86,17 @@ class mapa(pygame.sprite.Sprite):
             self.frame = (self.frame + 1) % 2
             self.con = 0
         a = tam["mapa"]
-        self.image = pygame.Surface.subsurface(mapas[nivel][self.frame], (0, 0, a[0], a[1]))
+        self.image = pygame.Surface.subsurface(mapas[self.lvl][self.frame], (0, 0, a[0], a[1]))
+
+class Arco(pygame.sprite.Sprite):
+    def __init__(self, pos, gato):
+        pygame.sprite.Sprite.__init__(self)
+        a = tam["arco"]
+        self.image = pygame.Surface.subsurface(arco, (0, 0, a[0], a[1]))
+        self.rect = self.image.get_rect()
+        self.gato = gato
+        self.rect.x=  pos[0]
+        self.rect.y = pos[1]
 
 class Coin(pygame.sprite.Sprite):
     def __init__(self, pos):
@@ -102,6 +141,26 @@ class Disparo(pygame.sprite.Sprite):
         a = tam["balas"]
         self.image = pygame.Surface.subsurface(balas[self.type], (a[0]*self.con, 0, a[0], a[1]))
 
+class Rayo(pygame.sprite.Sprite):
+    def __init__(self, pos, type):
+        pygame.sprite.Sprite.__init__(self)
+        a = tam["rayo"]
+        self.image = pygame.Surface.subsurface(balas[type], (0,0,a[0], a[1]))
+        self.rect = self.image.get_rect()
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+        self.type = type
+        self.con = 0
+        self.damage = damage[type]
+
+    def update(self):
+        if self.con < 9:
+            self.con += 1
+        else:
+            self.con = 0
+        a = tam["rayo"]
+        self.image = pygame.Surface.subsurface(balas[self.type], (0, self.con*a[1], a[0], a[1]))
+
 class Torre (pygame.sprite.Sprite):
     def __init__(self, type, pos):
         pygame.sprite.Sprite.__init__(self)
@@ -121,13 +180,20 @@ class Torre (pygame.sprite.Sprite):
         self.dead = False
         self.unlocked = True
         self.dis = None
+        self.rayo = None
         self.coin = None
+
+    def upgrade(self):
+        if self.type <= 8:
+            self.type += 4
+        else:
+            print("Nivel máximo alcanzado")
 
     def update(self):
         if self.click and self.unlocked:
             self.rect.center = pygame.mouse.get_pos()
         else:
-            if self.type == 1:
+            if self.type == 1 or self.type == 5 or self.type == 9:
                 if self.atk < tics/self.vel:
                     self.atk += 1
                 else:
@@ -140,7 +206,7 @@ class Torre (pygame.sprite.Sprite):
                     self.con = 0
                 if self.health <= 0:
                     self.dead = True
-            elif self.type == 4 or self.type == 3:
+            elif self.type == 3 or self.type == 7 or self.type == 11:
                 if self.atk < tics/self.vel:
                     self.atk += 1
                 else:
@@ -153,7 +219,20 @@ class Torre (pygame.sprite.Sprite):
                     self.con = 0
                 if self.health <= 0:
                     self.dead = True
-            elif self.type == 2:
+            elif self.type == 4 or self.type == 8 or self.type == 12:
+                if self.atk < tics/self.vel:
+                    self.atk += 1
+                else:
+                    self.rayo = Rayo([self.rect.right,self.rect.y], self.type)
+                    self.atk = 0
+                if self.con < 10:
+                    self.con += 1
+                else:
+                    self.frame = (self.frame + 1) % 2
+                    self.con = 0
+                if self.health <= 0:
+                    self.dead = True
+            elif self.type == 2 or self.type == 6 or self.type == 10:
                 if self.con < 10:
                     self.con += 1
                 else:
@@ -175,7 +254,7 @@ class Enemigo(pygame.sprite.Sprite):
         self.type = type
         self.frames = 3
         self.action = 0
-        self.health = 200
+        self.health = 15
         self.frame = 2
         self.damage = 25
         self.atk_speed = 1
@@ -188,6 +267,7 @@ class Enemigo(pygame.sprite.Sprite):
 
     def update(self):
         #Caminar
+        en_y = 0
         if self.action == 0:
             if self.lag <= 10:
                 self.lag += 1
@@ -208,6 +288,7 @@ class Enemigo(pygame.sprite.Sprite):
                     self.con += 1
                 else:
                     self.con = 0
+            en_y = 2
             if self.atk < tics/self.atk_speed:
                 self.atk += 1
             else:
@@ -228,6 +309,7 @@ class Enemigo(pygame.sprite.Sprite):
                     self.atk = 0
                     self.con = 0
                     self.punch = True
+            en_y = 2
         #Muriendo
         elif self.action == 3:
             if self.lag <= 10:
@@ -238,15 +320,12 @@ class Enemigo(pygame.sprite.Sprite):
                     self.con += 1
                 else:
                     self.dead = True
+            en_y = 5
         if self.health <= 0 and self.action != 3:
             self.frames = 0
             self.action = 3
             self.con = 0
         a = tam["enemigos"]
-        en_y = 0
-        if self.action < 2:
-            en_y = self.action
-        else: en_y = self.action - 1
         self.image = pygame.Surface.subsurface(perros[self.type], (a[0]*self.con, en_y*a[1], a[0], a[1]))
 
 class Carta(pygame.sprite.Sprite):
@@ -263,9 +342,7 @@ def colocar(pos):
         return True
     else: return False
 
-'''class stats(pygame.sprote.Sprite):
-    def __init__(self, b, pos):
-        pygame.sprite.Sprite.__init__(self)'''
+
 
 class Bloque(pygame.sprite.Sprite):
     def __init__(self, pos):
@@ -275,6 +352,16 @@ class Bloque(pygame.sprite.Sprite):
         self.rect.x = pos[0]
         self.rect.y = pos[1]
         self.oc = False
+
+class Texto(pygame.sprite.Sprite):
+    def __init__(self, pos, texto):
+        pygame.sprite.Sprite.__init__(self)
+        fuente = pygame.font.Font(None, 40)
+        text = fuente.render(texto, 0, BLANCO)
+        self.image = text
+        self.rect = self.image.get_rect()
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
 
 class Generador (pygame.sprite.Sprite):
     def __init__(self, pos, type):
@@ -291,6 +378,7 @@ class GeneradorEnemigo (pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface([20,20])
         self.rect = self.image.get_rect()
+        self.rect.x = ancho
         self.cd = 0
         self.con = 0
         self.cant = 0
@@ -306,10 +394,10 @@ class GeneradorEnemigo (pygame.sprite.Sprite):
             self.cd = 10
             self.cant += 1
 
-if __name__ == '__main__':
+def in_game(sc, lvl):
     #Definicion de variables
-    pygame.init()
-    pantalla=pygame.display.set_mode([ancho,alto])
+    pygame.mixer.init()
+    pygame.mixer.set_num_channels(20)
 
     todos = pygame.sprite.Group()
     torres = pygame.sprite.Group()
@@ -318,20 +406,24 @@ if __name__ == '__main__':
     hud = pygame.sprite.Group()
     disparos = pygame.sprite.Group()
     coins = pygame.sprite.Group()
-    mapita = mapa(nivel)
+    rayos = pygame.sprite.Group()
+    mapita = mapa(lvl)
     ge = GeneradorEnemigo()
     todos.add(mapita)
     todos.add(ge)
 
-    g1 = Generador([20,50], 1)
-    g2 = Generador([20,200], 2)
-    g3 = Generador([20,350], 3)
+    g1 = Generador([20,30], 1)
+    g2 = Generador([20,150], 2)
+    g3 = Generador([20,270], 3)
+    g4 = Generador([20,390], 4)
     hud.add(g1)
     todos.add(g1)
     hud.add(g2)
     todos.add(g2)
     hud.add(g3)
     todos.add(g3)
+    hud.add(g4)
+    todos.add(g4)
 
     x = legal[0]
     y = legal[1]
@@ -348,7 +440,12 @@ if __name__ == '__main__':
     win = False
     exit = False
     card = None
+    bow = None
     total_coins = 100
+    text = Texto([0,0], str(total_coins))
+    todos.add(text)
+    pygame.mixer.music.load("Juego/Sonidos/Mapa1.mp3")
+    pygame.mixer.music.play(-1)
     while not fin:
         #Gestion de eventos
         while not (lose or win or exit or fin):
@@ -356,8 +453,19 @@ if __name__ == '__main__':
                 if event.type == pygame.QUIT:
                     fin=True
                 if event.type == pygame.MOUSEBUTTONDOWN:
+                    if bow != None:
+                        if bow.rect.collidepoint(event.pos) and bow.gato.type <= 8:
+                            if total_coins >= costos[bow.gato.type+4]:
+                                bow.gato.upgrade()
+                                total_coins -= costos[bow.gato.type]
+                                print(total_coins)
+                            else:
+                                print("Monedas insuficientes")
+                        todos.remove(bow)
+                        bow = None
                     if card != None:
                         todos.remove(card)
+                        card = None
                     for g in hud:
                         #Verifica qué generador quiere usar
                         if g.rect.collidepoint(event.pos):
@@ -377,6 +485,8 @@ if __name__ == '__main__':
                             else:
                                 #Muestra la carta de stats
                                 card = Carta([b.rect.right, b.rect.y], b.type)
+                                bow = Arco([b.rect.right+tam["cartas"][0], b.rect.y], b)
+                                todos.add(bow)
                                 todos.add(card)
                     for c in coins:
                         #verifica si la moneda lleva mucho tiempo y desaparece
@@ -422,7 +532,13 @@ if __name__ == '__main__':
                     #Genera el disparo
                     disparos.add(t.dis)
                     todos.add(t.dis)
+                    dis = pygame.mixer.Sound("C:/FFOutput/Gatolv1-2.wav")
+                    dis.play()
                     t.dis = None
+                if t.rayo != None:
+                    rayos.add(t.rayo)
+                    todos.add(t.rayo)
+                    t.rayo = None
                 if t.coin != None:
                     #Genera la moneda
                     coins.add(t.coin)
@@ -441,11 +557,20 @@ if __name__ == '__main__':
                 en = None
                 ge.gen = 0
 
+            todos.remove(text)
+            text = Texto([0,0], str(total_coins))
+            todos.add(text)
+
             for d in disparos:
                 #elimina el disparo si pasó el limite de la pantalla
                 if d.rect.x >= ancho:
                     disparos.remove(d)
                     todos.remove(d)
+
+            for r in rayos:
+                if r.con >= 9:
+                    rayos.remove(r)
+                    todos.remove(r)
 
             for enemigo in enemigos:
                 if enemigo.rect.x <= legal[0]:
@@ -463,6 +588,11 @@ if __name__ == '__main__':
                         enemigo.health -= d.damage
                         todos.remove(d)
                         disparos.remove(d)
+                    #Verifica las colisiones con los disparos
+                    ls_col2 = pygame.sprite.spritecollide(enemigo, rayos, False)
+                    for d in ls_col2:
+                        enemigo.health -= d.damage
+
                     #Verifica las colisiones con las torres
                     ls_coli = pygame.sprite.spritecollide(enemigo, torres, False)
                     #If para prevenir  que se queden parados si matan al gato que estaban atacando
@@ -473,6 +603,7 @@ if __name__ == '__main__':
                             if enemigo.punch:
                                 t.health -= enemigo.damage
                                 enemigo.punch = False
+                            break
                     elif enemigo.action != 3:
                         enemigo.action = 0
             #Condición de victoria cutre
@@ -482,7 +613,27 @@ if __name__ == '__main__':
                     print("Gana")
 
             todos.update()
-            todos.draw(pantalla)
+            todos.draw(sc)
             pygame.display.flip()
             reloj.tick(tics)
         fin = True
+    if win:
+        in_game(sc, 2)
+    if lose:
+        Menu()
+
+def Menu():
+    menu = False
+    pantalla=pygame.display.set_mode([ancho,alto])
+    pantalla.fill(NEGRO)
+    pygame.display.flip()
+    while not menu:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                fin=True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                menu = True
+    in_game(pantalla, 1)
+
+if __name__ == '__main__':
+    Menu()

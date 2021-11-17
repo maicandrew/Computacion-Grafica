@@ -3,7 +3,7 @@ FPS = 60
 pygame.init()
 pygame.mixer.quit()
 clock = pygame.time.Clock()
-movie = pygame.movie.Movie(r'C:\Python27\video\test-mpeg.mpg')
+movie = pygame.movie.Movie(r'C:/FFOutput/Intro.mpg')
 screen = pygame.display.set_mode(movie.get_size())
 movie_screen = pygame.Surface(movie.get_size()).convert()
 movie.set_display(movie_screen)
@@ -14,7 +14,7 @@ while playing:
         if event.type == pygame.QUIT:
             movie.stop()
             playing = False
-    screen.blit(movie_screen,(0,0))
+    screen.blit(movie_screen,(0,0)) 
     pygame.display.update()
-    clock.tick(FPS)  
+    clock.tick(FPS)
 pygame.quit()
