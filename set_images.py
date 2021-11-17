@@ -42,42 +42,24 @@ def set_gatos(tam):
 
 def set_perros(tam):
     perros = dict()
-    perro = pygame.image.load("Juego/enemigos/Enemigo2.1.png")
-    perro = pygame.transform.scale(perro,[tam[0]*11, tam[1]*4])
+    perro = pygame.image.load("Juego/enemigos/Enemigo1.png")
+    perro = pygame.transform.scale(perro,[tam[0]*8, tam[1]*4])
     perros[1] = perro
-    '''perro = pygame.image.load("Juego/Mapa y perros/perro2lv1.png")
-    perro = pygame.transform.scale(perro,tam)
+    perro = pygame.image.load("Juego/enemigos/Enemigo2.png")
+    perro = pygame.transform.scale(perro,[tam[0]*11, tam[1]*4])
     perros[2] = perro
-    perro = pygame.image.load("Juego/Mapa y perros/perro3lv1.png")
-    perro = pygame.transform.scale(perro,tam)
+    perro = pygame.image.load("Juego/enemigos/Enemigo3.png")
+    perro = pygame.transform.scale(perro,[tam[0]*11, tam[1]*4])
     perros[3] = perro
-    perro = pygame.image.load("perro1.png")
-    perro = pygame.transform.scale(perro,tam)
+    perro = pygame.image.load("Juego/enemigos/Enemigo4.png")
+    perro = pygame.transform.scale(perro,[tam[0]*9, tam[1]*4])
     perros[4] = perro
-    perro = pygame.image.load("Juego/Mapa y perros/perro1lv2.png")
-    perro = pygame.transform.scale(perro,tam)
+    perro = pygame.image.load("Juego/enemigos/Enemigo5.png")
+    perro = pygame.transform.scale(perro,[tam[0]*8, tam[1]*4])
     perros[5] = perro
-    perro = pygame.image.load("Juego/Mapa y perros/perro2lv2.png")
-    perro = pygame.transform.scale(perro,tam)
+    perro = pygame.image.load("Juego/enemigos/Enemigo6.png")
+    perro = pygame.transform.scale(perro,[tam[0]*10, tam[1]*4])
     perros[6] = perro
-    perro = pygame.image.load("Juego/Mapa y perros/perro3lv2.png")
-    perro = pygame.transform.scale(perro,tam)
-    perros[7] = perro
-    perro = pygame.image.load("perro1.png")
-    perro = pygame.transform.scale(perro,tam)
-    perros[8] = perro
-    perro = pygame.image.load("Juego/Mapa y perros/perro1lv3.png")
-    perro = pygame.transform.scale(perro,tam)
-    perros[9] = perro
-    perro = pygame.image.load("Juego/Mapa y perros/perro2lv3.png")
-    perro = pygame.transform.scale(perro,tam)
-    perros[10] = perro
-    perro = pygame.image.load("Juego/Mapa y perros/perro3lv3.png")
-    perro = pygame.transform.scale(perro,tam)
-    perros[11] = perro
-    perro = pygame.image.load("perro1.png")
-    perro = pygame.transform.scale(perro,tam)
-    perros[12] = perro'''
     return perros
 
 def set_balas(tam, tam2, tam3):
@@ -110,7 +92,7 @@ def set_balas(tam, tam2, tam3):
     balas[11] = bala
     balas[12] = bala1
     bala = pygame.image.load("Juego/enemigos/DisparoMegaP.png")
-    bala = pygame.Surface.subsurface(bala, (41, 0, 84, bala.get_height()))
+    bala = pygame.Surface.subsurface(bala, (253, 20, 47, 27))
     bala = pygame.transform.scale(bala, tam)
     balas["jefe1"] = bala
     return balas
@@ -159,12 +141,20 @@ def set_mapas(factor):
     mapas = dict()
     mapa = []
     mapita = pygame.image.load("Juego/Mapa y gatos/Mapa1.1.jpg")
-    mapita = pygame.transform.scale(mapita, [int(mapita.get_width()*factor), int(mapita.get_height()*factor)])
+    mapita = pygame.transform.scale(mapita, [1300, 557])
     mapa.append(mapita)
     mapita = pygame.image.load("Juego/Mapa y gatos/Mapa1.2.jpg")
-    mapita = pygame.transform.scale(mapita, [int(mapita.get_width()*factor), int(mapita.get_height()*factor)])
+    mapita = pygame.transform.scale(mapita, [1300, 557])
     mapa.append(mapita)
     mapas[1] = mapa
+    mapa = []
+    mapita = pygame.image.load("Juego/Mapa y gatos/Mapa2.1.png")
+    mapita = pygame.transform.scale(mapita, [1300, 557])
+    mapa.append(mapita)
+    mapita = pygame.image.load("Juego/Mapa y gatos/Mapa2.2.png")
+    mapita = pygame.transform.scale(mapita, [1300, 557])
+    mapa.append(mapita)
+    mapas[2] = mapa
     return mapas
 
 def set_boss(tam):
@@ -173,9 +163,22 @@ def set_boss(tam):
     jefe = pygame.transform.scale(jefe, [tam[0]*8, tam[1]*2])
     jefes[1] = jefe
     jefe = pygame.image.load("Juego/enemigos/Boss2.png")
-    jefe = pygame.transform.scale(jefe, [tam[0]*6, tam[1]*3])
+    jefe = pygame.transform.scale(jefe, [tam[0]*5, tam[1]*3])
     jefes[2] = jefe
     return jefes
+
+def set_final(tam):
+    cosas  = dict()
+    rey = pygame.image.load("Juego/Escena final/Reygato.png")
+    rey = pygame.transform.scale(rey, [int(tam[0]/2), tam[1]])
+    cosas["gato"] = rey
+    espada = pygame.image.load("Juego/Escena final/Espada.png")
+    espada = pygame.transform.scale(espada, [68,100])
+    cosas["espada"] = espada
+    espada = pygame.image.load("Juego/Escena final/EspadaActiva.png")
+    espada = pygame.transform.scale(espada, [68,100])
+    cosas["espada1"] = espada
+    return cosas
 
 def set_botones(fact):
     botones = dict()
@@ -191,6 +194,9 @@ def set_botones(fact):
     boton = pygame.image.load("Juego/Menus/Historia.png")
     boton = pygame.transform.scale(boton, [int(boton.get_width()*fact), int(boton.get_height()*fact)])
     botones["historia"] = boton
+    boton = pygame.image.load("Juego/Menus/Pause.png")
+    boton = pygame.transform.scale(boton, [20,20])
+    botones["pausa"] = boton
     botones[0] = pygame.Surface([20,20])
     return botones
 
@@ -209,3 +215,28 @@ def set_monedas(tam):
     moneda = pygame.transform.scale(moneda, tam)
     monedas[0] = moneda
     return monedas
+
+def set_tutorial(tam):
+    tuto = dict()
+    i = pygame.image.load("Juego/Tutorial/T1.png")
+    i = pygame.transform.scale(i, tam)
+    tuto[1] = i
+    i = pygame.image.load("Juego/Tutorial/T2.png")
+    i = pygame.transform.scale(i, tam)
+    tuto[2] = i
+    i = pygame.image.load("Juego/Tutorial/T3.png")
+    i = pygame.transform.scale(i, tam)
+    tuto[3] = i
+    i = pygame.image.load("Juego/Tutorial/T4.png")
+    i = pygame.transform.scale(i, tam)
+    tuto[4] = i
+    i = pygame.image.load("Juego/Tutorial/T5.png")
+    i = pygame.transform.scale(i, tam)
+    tuto[5] = i
+    i = pygame.image.load("Juego/Tutorial/T6.png")
+    i = pygame.transform.scale(i, tam)
+    tuto[6] = i
+    i = pygame.image.load("Juego/Tutorial/T7.png")
+    i = pygame.transform.scale(i, tam)
+    tuto[7] = i
+    return tuto

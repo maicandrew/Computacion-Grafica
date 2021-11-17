@@ -1,4 +1,5 @@
 import random
+import time
 import pygame
 from set_images import *
 from set_sounds import *
@@ -10,8 +11,8 @@ NEGRO = [0, 0, 0]
 VERDE = [0,255,0]
 ROJO = [255, 0, 0]
 BLANCO = [255, 255, 255]
-nivel = 1
-legal = [240,80, 915,530]
+legal = [[240,80, 915,530], [180,65,925,513]]
+reloj=pygame.time.Clock()
 tam = dict()
 #Diccionario de tamaños
 tam = {
@@ -74,6 +75,33 @@ damage = {
 11 : 4,
 12 : 6,
 }
+damage_enemigos = dict()
+damage_enemigos = {
+1 : 1,
+2 : 0.5,
+3 : 1,
+4 : 0.7,
+5: 1,
+6: 1.5
+}
+healths_enemigos = dict()
+healths_enemigos = {
+1 : 30,
+2 : 45,
+3 : 15,
+4 : 9,
+5: 27,
+6: 18
+}
+frames_enemigos = dict()
+frames_enemigos = {
+1: [8,5,5,4],
+2: [11,4,6,4],
+3: [11,3,5,4],
+4: [8,7,9,4],
+5: [8,5,5,4],
+6: [10,8,8,4]
+}
 cartas = set_cartas(tam["cartas"])
 balas = set_balas(tam["balas"], tam["rayo"], tam["espada"])
 gatos = set_gatos(tam["gato"])
@@ -81,13 +109,18 @@ perros = set_perros(tam["enemigos"])
 bosses = set_boss(tam["enemigos"])
 monedas = set_monedas(tam["moneda"])
 botones = set_botones(0.5)
+King = set_final(tam["gato"])
 sounds_gatos = set_sounds_gatos()
+explode = pygame.mixer.Sound("Juego/Sonidos/Explosion sonido efecto.wav")
+#sounds_enemigos = set_sounds_enemigos()
 arco = pygame.image.load("Juego/Cartas y mejoras/arco.png")
 arco = pygame.transform.scale(arco, tam["arco"])
 ancho = tam["mapa"][0]
 alto = tam["mapa"][1]
+tutos = set_tutorial([ancho, alto])
+print(alto, ancho)
 
-tam["linea"] = [ancho - legal[0], int((legal[3] - legal[1]) / 5)]
+tam["linea"] = [ancho - legal[0][0], int((legal[0][3] - legal[0][1]) / 5)]
 #Termina setting de variables globales
 
 class mapa(pygame.sprite.Sprite):
@@ -135,10 +168,11 @@ class Coin(pygame.sprite.Sprite):
         self.rect.y = pos[1]
 
     def update(self):
-        if self.con <= self.dur*tics:
-            self.con += 1
-        else:
-            self.des = True
+        if self.value != 0:
+            if self.con <= self.dur*tics:
+                self.con += 1
+            else:
+                self.des = True
         a = tam["moneda"]
         self.image = pygame.Surface.subsurface(monedas[self.value], (0, 0, a[0], a[1]))
 
@@ -167,7 +201,7 @@ class DisparoEnemigo(pygame.sprite.Sprite):
     def __init__(self, pos):
         pygame.sprite.Sprite.__init__(self)
         a = tam["balas"]
-        self.image = pygame.Surface.subsurface(balas["jefe1"], (0, 0, a[0], a[1]))
+        self.image = balas["jefe1"]
         self.rect = self.image.get_rect()
         self.type = type
         self.con = 0
@@ -230,7 +264,10 @@ class Torre (pygame.sprite.Sprite):
         self.frame = 0
         self.con = 0
         self.rect = self.image.get_rect()
-        self.vel = 0.5
+        if type in[1,5,9]:
+            self.vel = 0.2
+        else:
+            self.vel = 0.5
         self.block = None
         self.lin = None
         self.range = None
@@ -332,11 +369,14 @@ class Enemigo(pygame.sprite.Sprite):
         self.type = type
         self.frames = 11
         self.action = 0
-        self.health = 50
+        self.health = healths_enemigos[type]
         self.frame = 2
-        self.damage = 25
+        self.damage = damage_enemigos[type]
         self.atk_speed = 1
-        self.mov_speed = 120
+        if type == 6:
+            self.mov_speed = 180
+        else:
+            self.mov_speed = 60
         self.dead = False
         self.lag = 0
         self.con = 0
@@ -344,8 +384,8 @@ class Enemigo(pygame.sprite.Sprite):
         self.punch = False
 
     def update(self):
+        self.frames = frames_enemigos[self.type][self.action]
         #Caminar
-        en_y = 0
         if self.action == 0:
             if self.lag <= 10:
                 self.lag += 1
@@ -358,7 +398,6 @@ class Enemigo(pygame.sprite.Sprite):
             self.rect.x -= self.mov_speed/tics
         #Parado
         elif self.action == 1:
-            self.frames = 4
             if self.lag <= 10:
                 self.lag += 1
             else:
@@ -367,7 +406,6 @@ class Enemigo(pygame.sprite.Sprite):
                     self.con += 1
                 else:
                     self.con = 0
-            en_y = 3
             if self.atk < tics/self.atk_speed:
                 self.atk += 1
             else:
@@ -377,7 +415,6 @@ class Enemigo(pygame.sprite.Sprite):
                 self.con = 0
         #Atacando
         elif self.action == 2:
-            self.frames = 6
             if self.lag <= 10:
                 self.lag += 1
             else:
@@ -389,10 +426,8 @@ class Enemigo(pygame.sprite.Sprite):
                     self.atk = 0
                     self.con = 0
                     self.punch = True
-            en_y = 1
         #Muriendo
         elif self.action == 3:
-            self.frames = 4
             if self.lag <= 10:
                 self.lag += 1
             else:
@@ -401,13 +436,12 @@ class Enemigo(pygame.sprite.Sprite):
                     self.con += 1
                 else:
                     self.dead = True
-            en_y = 2
         if self.health <= 0 and self.action != 3:
             self.frames = 0
             self.action = 3
             self.con = 0
         a = tam["enemigos"]
-        self.image = pygame.Surface.subsurface(perros[self.type], (a[0]*self.con, en_y*a[1], a[0], a[1]))
+        self.image = pygame.Surface.subsurface(perros[self.type], (a[0]*self.con, self.action*a[1], a[0], a[1]))
 
 class Boss(pygame.sprite.Sprite):
     def __init__(self, pos, type):
@@ -432,8 +466,6 @@ class Boss(pygame.sprite.Sprite):
         self.dead = False
 
     def update(self):
-        en_y = 0
-        en_x = 0
         if self.type == 1:
             self.frames = 8
             en_x = self.frames - (self.con + 1)
@@ -468,7 +500,7 @@ class Boss(pygame.sprite.Sprite):
                         self.con = 0
                         self.dead = True
         elif self.type == 2:
-            en_x = self.con
+            en_y = 0
             #Caminar
             if self.action == 0:
                 if self.lag <= 10:
@@ -506,7 +538,7 @@ class Boss(pygame.sprite.Sprite):
                     self.lag += 1
                 else:
                     self.lag = 0
-                    if self.con <= self.frames-1:
+                    if self.con < self.frames-1:
                         self.con += 1
                     else:
                         self.action = 1
@@ -521,7 +553,7 @@ class Boss(pygame.sprite.Sprite):
                     self.lag += 1
                 else:
                     self.lag = 0
-                    if self.con <= self.frames-1:
+                    if self.con < self.frames-1:
                         self.con += 1
                     else:
                         self.dead = True
@@ -532,7 +564,6 @@ class Boss(pygame.sprite.Sprite):
                 self.con = 0
         #Saltando
         #if self.action == 4:
-
         a = tam["enemigos"]
         self.image = pygame.Surface.subsurface(bosses[self.type], (a[0]*self.con, en_y*a[1], a[0], a[1]))
 
@@ -545,8 +576,21 @@ class Carta(pygame.sprite.Sprite):
         self.rect.x = pos[0]
         self.rect.y = pos[1]
 
-def colocar(pos):
-    if legal[0] <= pos[0] <= legal[2] and legal[1] <= pos[1] <= legal[3]:
+class KingSword(pygame.sprite.Sprite):
+    def __init__(self, pos, type):
+        pygame.sprite.Sprite.__init__(self)
+        a = tam["cartas"]
+        if type == 1:
+            self.image = King["espada"]
+        else:
+            self.image = King["espada1"]
+        self.rect = self.image.get_rect()
+        self.type = type
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
+def colocar(pos,lvl):
+    if legal[lvl][0] <= pos[0] <= legal[lvl][2] and legal[lvl][1] <= pos[1] <= legal[lvl][3]:
         return True
     else: return False
 
@@ -571,7 +615,7 @@ class Texto(pygame.sprite.Sprite):
     def __init__(self, pos, texto):
         pygame.sprite.Sprite.__init__(self)
         fuente = pygame.font.Font(None, 40)
-        text = fuente.render(texto, 0, BLANCO)
+        text = fuente.render(texto, 0, NEGRO)
         self.image = text
         self.rect = self.image.get_rect()
         self.rect.x = pos[0]
@@ -622,8 +666,10 @@ class GeneradorEnemigo (pygame.sprite.Sprite):
         elif self.cant <= self.tope:
             self.gen = 1
             self.con = 0
-            self.cd = 10
+            self.cd = 0
             self.cant += 1
+        else:
+            self.gen = 1
 
 def in_game(sc, lvl):
     #Definicion de variables
@@ -647,7 +693,7 @@ def in_game(sc, lvl):
     todos.add(mapita)
     todos.add(ge)
 
-    botonpausa = Boton([0,0],)
+    botonpausa = Boton([0,0], "pausa")
     todos.add(botonpausa)
 
     g1 = Generador([20,30], 1)
@@ -663,8 +709,16 @@ def in_game(sc, lvl):
     hud.add(g4)
     todos.add(g4)
 
-    x = legal[0]
-    y = legal[1]
+    espadita = None
+    if lvl == 2:
+        espadita = KingSword([110,432], 1)
+        todos.add(espadita)
+
+    gema = Coin([975,10], 0)
+    todos.add(gema)
+
+    x = legal[lvl-1][0]
+    y = legal[lvl-1][1]
     for j in range(5):
         for i in range(9):
             bloque = Bloque([x + (i*tam["bloque"][0]), y + (j*tam["bloque"][1])])
@@ -674,16 +728,18 @@ def in_game(sc, lvl):
 
     last = None
     mp = [0,0]
-    reloj=pygame.time.Clock()
     fin=False
     lose = False
     win = False
     exit = False
     pause = False
+    boss = None
     card = None
     bow = None
-    total_coins = 100
-    text = Texto([200,0], str(total_coins))
+    nocard = False
+    Total_score = 100500
+    total_coins = 10000
+    text = Texto([1000,10], str(total_coins))
     todos.add(text)
     pygame.mixer.music.load("Juego/Sonidos/Mapa1.mp3")
     pygame.mixer.music.play(-1)
@@ -695,6 +751,20 @@ def in_game(sc, lvl):
                     if event.type == pygame.QUIT:
                         fin=True
                     if event.type == pygame.MOUSEBUTTONDOWN:
+                        if espadita != None:
+                            if espadita.type > 1:
+                                if espadita.rect.collidepoint(event.pos):
+                                    for d in disparos:
+                                        todos.remove(d)
+                                    for r in rayos:
+                                        todos.remove(r)
+                                    for c in coins:
+                                        todos.remove(coins)
+                                    for g in hud:
+                                        todos.remove(g)
+                                    todos.draw(sc)
+                                    Final_Scene(sc, todos)
+                                    win = True
                         if bow != None:
                             if bow.rect.collidepoint(event.pos) and bow.gato.type <= 8:
                                 if total_coins >= costos[bow.gato.type+4]:
@@ -718,19 +788,6 @@ def in_game(sc, lvl):
                                     m8 = Torre(g.type, event.pos)
                                     last = m8
                                     todos.add(m8)
-                        for b in torres:
-                            if b.rect.collidepoint(event.pos):
-                                #Hace que la torre siga el mouse
-                                if b.unlocked:
-                                    b.click = True
-                                    last = b
-                                    break
-                                else:
-                                    #Muestra la carta de stats
-                                    card = Carta([b.rect.right, b.rect.y], b.type)
-                                    bow = Arco([b.rect.right+tam["cartas"][0], b.rect.y], b)
-                                    todos.add(bow)
-                                    todos.add(card)
                         for c in coins:
                             #verifica si la moneda lleva mucho tiempo y desaparece
                             if c.des:
@@ -738,14 +795,31 @@ def in_game(sc, lvl):
                                 todos.remove(c)
                             #Verifica si se da click en la moneda para recolectarla
                             if c.rect.collidepoint(event.pos):
+                                nocard = True
                                 total_coins += c.value
+                                Total_score -= c.value*5
                                 print(total_coins)
                                 coins.remove(c)
                                 todos.remove(c)
                                 break
 
+                        for b in torres:
+                            if b.rect.collidepoint(event.pos):
+                                #Hace que la torre siga el mouse
+                                if b.unlocked:
+                                    b.click = True
+                                    last = b
+                                    break
+                                elif not nocard:
+                                    #Muestra la carta de stats
+                                    card = Carta([b.rect.right, b.rect.y], b.type)
+                                    bow = Arco([b.rect.right+tam["cartas"][0], b.rect.y], b)
+                                    todos.add(bow)
+                                    todos.add(card)
+
+                        nocard = False
                     if event.type == pygame.MOUSEBUTTONUP:
-                        if event.pos == mp or not colocar(event.pos):
+                        if event.pos == mp or not colocar(event.pos, lvl-1):
                             #Si la torre está fuera de lugar, desaparece
                             todos.remove(last)
                             last = None
@@ -778,6 +852,7 @@ def in_game(sc, lvl):
                                     #Si el bloque está ocupado, desaparece la torre que iba a poner
                                     todos.remove(last)
                                     last = None
+                                break
                 for t in torres:
                     if t.dead:
                         #Verifica si la torre está muerta y desocupa el bloque
@@ -810,32 +885,28 @@ def in_game(sc, lvl):
                             #Genera el disparo
                             disparos.add(t.dis)
                             todos.add(t.dis)
-                            dis = sounds_gatos[t.type]
-                            dis.play()
+                            sounds_gatos[t.type].play()
                             t.dis = None
                         if t.rayo != None:
                             rayos.add(t.rayo)
                             todos.add(t.rayo)
-                            dis = sounds_gatos[t.type]
-                            dis.play()
+                            sounds_gatos[t.type].play()
                             t.rayo = None
                         if t.coin != None:
                             #Genera la moneda
                             coins.add(t.coin)
                             todos.add(t.coin)
-                            dis = sounds_gatos[t.type]
-                            dis.play()
+                            sounds_gatos[t.type].play()
                             t.coin = None
                         if t.sw != None:
                             espadas.add(t.sw)
                             todos.add(t.sw)
-                            dis = sounds_gatos[t.type]
-                            dis.play()
+                            sounds_gatos[t.type].play()
                             t.sw = None
                 if ge.gen != 0:
                     if ge.cant <= ge.tope:
                         #Genera un e, nemigo en una línea al azar
-                        en = Enemigo([915,80+(random.randint(0,4)*tam["bloque"][1])], 1)
+                        en = Enemigo([ancho-tam["enemigos"][0],80+(random.randint(0,4)*tam["bloque"][1])], random.randint(1,6))
                         enemigos.add(en)
                         todos.add(en)
                         en = None
@@ -843,17 +914,32 @@ def in_game(sc, lvl):
                     else:
                         if len(enemigos.sprites()) == 0:
                             if not ge.boss:
-                                boss = Boss([915,80], 1)
+                                pygame.mixer.music.stop()
+                                pygame.mixer.music.load("Juego/Sonidos/WARNING!.mp3")
+                                ge.cd = 11
+                                ge.con = 0
+                                ge.gen = 0
+                                ge.boss = True
+                                print("Boss is coming")
+                                pygame.mixer.music.play()
+                            elif boss == None:
+                                boss = Boss([915,80], lvl)
                                 enemigos.add(boss)
                                 todos.add(boss)
+                                pygame.mixer.music.stop()
+                                pygame.mixer.music.load("Juego/Sonidos/Boss"+str(lvl)+".mp3")
+                                pygame.mixer.music.play(-1)
                                 print("Sale el boss")
-                                ge.boss = True
+                                if espadita != None:
+                                    todos.remove(espadita)
+                                    espadita = KingSword([110,432], lvl)
+                                    todos.add(espadita)
                             else:
                                 print("Gana")
                                 win = True
 
                 todos.remove(text)
-                text = Texto([200,0], str(total_coins))
+                text = Texto([1000,10], str(total_coins))
                 todos.add(text)
 
                 for d in disparos:
@@ -873,7 +959,7 @@ def in_game(sc, lvl):
                         todos.remove(e)
 
                 for enemigo in enemigos:
-                    if enemigo.rect.x <= legal[0]:
+                    if enemigo.rect.x <= legal[lvl-1][0]:
                         #Pierde si un enemigo llega a la zona izquierda del jardín
                         lose = True
                         print("Pierde")
@@ -917,6 +1003,8 @@ def in_game(sc, lvl):
                                 if (not t.unlocked) and enemigo.action == 0:
                                     enemigo.action = 1
                                 if enemigo.punch:
+                                    if enemigo.type == 2 and isinstance(enemigo,Boss):
+                                        explode.play()
                                     t.health -= enemigo.damage
                                     enemigo.punch = False
                                 break
@@ -950,14 +1038,57 @@ def in_game(sc, lvl):
             fin = True
             pygame.mixer.music.stop()
     if win:
-        Transition(sc, lvl)
-    if lose or exit:
+        Transition(sc, lvl, True)
+    if lose:
+        Transition(sc, lvl, False)
+    if exit:
         Menu()
 
-def Transition(sc, lvl):
+def Final_Scene(sc, todos):
+    pygame.mixer.music.stop()
+    GatoRey = King["gato"]
+    sc.blit(GatoRey, [20,250])
+    pygame.display.flip()
+    omae = pygame.mixer.Sound("Juego/Escena final/Omae.wav")
+    omae.play()
+    time.sleep(omae.get_length())
+    todos.draw(sc)
+    pygame.display.flip()
+    es = pygame.mixer.Sound("Juego/Escena final/Espada.wav")
+    es.play()
+    time.sleep(es.get_length())
+    sc.blit(GatoRey, [950,240])
+    pygame.display.flip()
+    pygame.mixer.music.fadeout(2000)
+    time.sleep(2)
+
+def Transition(sc, lvl, v):
+    if v:
+        if lvl >= 2:
+            pygame.mixer.music.load("Juego/Sonidos/Victoria.wav")
+            pygame.mixer.music.play(-1)
+            vic = pygame.image.load("Juego/Menus/Victoria.png")
+            vic = pygame.transform.scale(vic, [ancho, alto])
+            sc.blit(vic,[0,0])
+            pygame.display.flip()
+        else:
+            if lvl == 0:
+                his = pygame.image.load("Juego/Videos/Versiones T/IntroT.png")
+                his = pygame.transform.scale(his, [ancho, alto])
+                sc.blit(his,[0,0])
+                pygame.display.flip()
+            else:
+                sc.fill(NEGRO)
+                pygame.display.flip()
+    else:
+        pygame.mixer.music.load("Juego/Sonidos/Victoria.wav")
+        pygame.mixer.music.play(-1)
+        lose = pygame.image.load("Juego/Menus/Derrota.png")
+        lose = pygame.transform.scale(lose, [ancho, alto])
+        sc.blit(lose,[0,0])
+        pygame.display.flip()
     next = False
-    boton = Boton([1150, 520], "continuar")
-    sc.fill(NEGRO)
+    boton = Boton([1100, 520], "continuar")
     sc.blit(boton.image, [boton.rect.x, boton.rect.y])
     pygame.display.flip()
     while not next:
@@ -967,8 +1098,37 @@ def Transition(sc, lvl):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if boton.rect.collidepoint(event.pos):
                     next = True
-                    lvl += 1
-                    in_game(sc, lvl)
+    pygame.mixer.music.stop()
+    if v and lvl <= 1:
+            lvl += 1
+            in_game(sc, lvl)
+    else:
+        Menu()
+
+
+def Tutorial(sc):
+    pygame.mixer.music.load("Juego/Tutorial/Tutorial.mp3")
+    pygame.mixer.music.play(-1)
+    i = 1
+    while i <= 7:
+        img = tutos[i]
+        sc.blit(img, [0,0])
+        next = False
+        exit = False
+        boton = Boton([1100, 520], "continuar")
+        sc.blit(boton.image, [boton.rect.x, boton.rect.y])
+        pygame.display.flip()
+        while not (next or exit):
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    exit=True
+                    i = 9
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if boton.rect.collidepoint(event.pos):
+                        next = True
+        i += 1
+    if not exit:
+        Menu()
 
 def Menu():
     menu = False
@@ -981,7 +1141,8 @@ def Menu():
                 menu=True
             if event.type == pygame.MOUSEBUTTONDOWN:
                 menu = True
-                in_game(pantalla, 1)
+                in_game(pantalla, 2)
+                #Transition(pantalla, 1, True)
 
 if __name__ == '__main__':
     Menu()
