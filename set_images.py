@@ -170,7 +170,7 @@ def set_boss(tam):
 def set_final(tam):
     cosas  = dict()
     rey = pygame.image.load("Juego/Escena final/Reygato.png")
-    rey = pygame.transform.scale(rey, [int(tam[0]/2), tam[1]])
+    rey = pygame.transform.scale(rey, [int(tam[0]/1.7), tam[1]])
     cosas["gato"] = rey
     espada = pygame.image.load("Juego/Escena final/Espada.png")
     espada = pygame.transform.scale(espada, [68,100])
@@ -197,6 +197,9 @@ def set_botones(fact):
     boton = pygame.image.load("Juego/Menus/Pause.png")
     boton = pygame.transform.scale(boton, [20,20])
     botones["pausa"] = boton
+    boton = pygame.image.load("Juego/Menus/Creditos.png")
+    boton = pygame.transform.scale(boton, [int(boton.get_width()*fact), int(boton.get_height()*fact)])
+    botones["creditos"] = boton
     botones[0] = pygame.Surface([20,20])
     return botones
 
